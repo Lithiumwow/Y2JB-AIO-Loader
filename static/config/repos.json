@@ -1,0 +1,31 @@
+{
+    "lapse.js": {
+        "type": "direct",
+        "url": "https://raw.githubusercontent.com/Gezine/Y2JB/main/payloads/lapse.js",
+        "save_path": "payloads/js/lapse.js"
+    },
+    "kstuff.elf": {
+        "type": "release",
+        "repo": "EchoStretch/kstuff",
+        "asset_pattern": "kstuff.elf",
+        "save_path": "payloads/kstuff.elf"
+    },
+    "ftpsrv.elf": {
+        "type": "release",
+        "repo": "drakmor/ftpsrv",
+        "asset_pattern": "ftpsrv-ps5.elf",
+        "save_path": "payloads/ftpsrv-ps5.elf"
+    },
+    "shadowmount.elf": {
+        "type": "release",
+        "repo": "adel-ailane/ShadowMount",
+        "asset_pattern": "shadowmount.elf",
+        "save_path": "payloads/shadowmount.elf"
+    },
+    "notify.elf": {
+        "type": "release",
+        "repo": "adel-ailane/ShadowMount",
+        "asset_pattern": "notify.elf",
+        "save_path": "payloads/notify.elf"
+    }
+}
