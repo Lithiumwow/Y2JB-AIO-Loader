@@ -88,5 +88,5 @@ If you did check the "Auto-Jailbreak" before pressing the "Start Jailbreak" butt
 - [ ] Add Y2JB auto update (download0.dat)
 - [ ] Add Y2JB update blocker option (appinfo.db, param.json, app.db)
 - [X] Add repo management (to automaticlly update payloads)
-- [ ] Add support to load custom js
+- [X] Add support to load custom js
 - [ ] Make it compatible with [ps5_y2jb_autoloader](https://github.com/itsPLK/ps5_y2jb_autoloader) (not sure if it's possible)
