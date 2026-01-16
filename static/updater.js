@@ -1,25 +1,34 @@
-async function UpdateY2JB() {
-    const btn = document.getElementById('update-btn');
+function updatePayloads() {
+    if(!confirm("This will overwrite existing payloads with the latest versions from GitHub. Continue?")) return;
+    
+    const btn = document.getElementById('update-btn') || event.target.closest('button');
     const originalText = btn.innerHTML;
     
-    try {
-        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Updating...';
-        btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Updating...';
+    btn.disabled = true;
 
-        const response = await fetch('/update_y2jb', { method: 'POST' });
-        if (!response.ok) throw new Error(`Status ${response.status}`);
-
-        const result = await response.json();
-        
-        if (result.success) {
-            alert(result.message);
-        } else {
-            throw new Error(result.error);
-        }
-    } catch (error) {
-        alert(error.message);
-    } finally {
+    fetch('/update_repos', { method: 'POST' })
+    .then(response => response.json())
+    .then(data => {
         btn.innerHTML = originalText;
         btn.disabled = false;
-    }
+        
+        if (data.success) {
+            let msg = "Update Process Finished.\n\n";
+            if (data.updated.length > 0) msg += "Updated:\n" + data.updated.join("\n") + "\n\n";
+            else msg += "No files were updated (already latest).\n\n";
+            
+            if (data.errors.length > 0) msg += "Errors:\n" + data.errors.join("\n");
+            
+            alert(msg);
+            location.reload();
+        } else {
+            alert("Update Failed: " + (data.message || "Unknown error"));
+        }
+    })
+    .catch(error => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        alert("Network Error: " + error);
+    });
 }

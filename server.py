@@ -7,6 +7,7 @@ import os
 from src.SendPayload import send_payload
 from src.delete_payload import handle_delete_payload
 from src.download_payload import handle_url_download
+from src.repo_manager import update_payloads
 import time
 import threading
 import requests
@@ -24,6 +25,10 @@ url = "http://localhost:8000/send_payload"
 os.makedirs(PAYLOAD_DIR, exist_ok=True)
 os.makedirs(CONFIG_DIR, exist_ok=True)
 os.makedirs('templates', exist_ok=True)
+
+if not os.path.exists(CONFIG_FILE):
+    with open(CONFIG_FILE, 'w') as f:
+        json.dump({"ajb": "false", "ip": ""}, f)
 
 def get_config():
     if not os.path.exists(CONFIG_FILE):
@@ -193,23 +198,12 @@ def delete_payload():
             'message': 'Failed to delete file'
         }), 500
 
-@app.route('/update_y2jb', methods=['POST'])
-def update_y2jb():
+@app.route('/update_repos', methods=['POST'])
+def update_repos():
     try:
-        url = "https://raw.githubusercontent.com/Gezine/Y2JB/main/payloads/lapse.js"
-        print(f"Fetching update from: {url}")
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            target_dir = os.path.join(PAYLOAD_DIR, 'js')
-            os.makedirs(target_dir, exist_ok=True)
-            file_path = os.path.join(target_dir, 'lapse.js')
-            with open(file_path, 'wb') as f:
-                f.write(response.content)
-            return jsonify({"success": True, "message": "Updated lapse.js successfully!"})
-        else:
-            return jsonify({"error": f"GitHub Error: {response.status_code}"}), 500
+        result = update_payloads()
+        return jsonify(result)
     except Exception as e:
-        print(f"Update Failed: {e}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
