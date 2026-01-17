@@ -27,5 +27,11 @@
         "save_path": "payloads/ftpsrv-ps5.elf",
         "repo": "drakmor/ftpsrv",
         "asset_pattern": "ftpsrv-ps5.elf"
+    },
+    "download0.dat": {
+        "type": "release",
+        "repo": "itsPLK/ps5_y2jb_autoloader",
+        "asset_pattern": "download0.dat",
+        "save_path": "payloads/dat/download0.dat"
     }
 }
