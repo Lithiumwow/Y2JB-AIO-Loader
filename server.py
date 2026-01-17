@@ -324,6 +324,32 @@ def run_block_updates():
 def credits_page():
     return render_template('credits.html')
 
+@app.route('/settings')
+def settings_page():
+    return render_template('settings.html')
+
+@app.route('/api/settings', methods=['GET', 'POST'])
+def handle_settings():
+    if request.method == 'GET':
+        return jsonify(get_config())
+    
+    if request.method == 'POST':
+        try:
+            new_settings = request.get_json()
+            current_config = get_config()
+            
+            valid_keys = ['ip', 'ajb', 'ftp_port']
+            for key in valid_keys:
+                if key in new_settings:
+                    current_config[key] = str(new_settings[key])
+            
+            with open(CONFIG_FILE, 'w') as f:
+                json.dump(current_config, f, indent=4)
+                
+            return jsonify({"success": True, "message": "Settings saved successfully"})
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 500
+
 if __name__ == "__main__":
     threading.Thread(target=check_ajb, daemon=True).start()
     app.run(host="0.0.0.0", port=8000 ,debug=False)
