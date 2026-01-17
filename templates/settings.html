@@ -25,6 +25,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style/toast.css') }}">
     <script src="{{ url_for('static', filename='toast.js') }}" defer></script>
     <script src="{{ url_for('static', filename='settings.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='auto_payload.js') }}" defer></script>
     <script src="{{ url_for('static', filename='color_mode.js') }}" defer></script> 
 </head>
 <body class="font-sans antialiased min-h-screen flex flex-col p-6 max-w-2xl mx-auto bg-oled-base text-gray-200 transition-colors duration-300">
@@ -80,6 +81,14 @@
                     <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-blue"></div>
                 </label>
             </div>
+            
+            <div class="mt-4">
+                <h3 class="text-xs font-bold uppercase opacity-60 mb-3 ml-1">Payload Sequence</h3>
+                <div id="payload-autoload-list" class="space-y-2 max-h-60 overflow-y-auto custom-scroll pr-1">
+                </div>
+                <p class="text-[10px] opacity-40 mt-2 ml-1">Toggle which payloads are loaded during the Auto-Jailbreak sequence.</p>
+            </div>
+
             <div class="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg flex gap-3 items-start">
                  <i class="fa-solid fa-triangle-exclamation text-yellow-500 mt-0.5 text-xs"></i>
                  <p class="text-[10px] opacity-80 leading-relaxed text-yellow-200">
