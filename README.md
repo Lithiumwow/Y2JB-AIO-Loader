@@ -82,6 +82,7 @@ If you did check the "Auto-Jailbreak" before pressing the "Start Jailbreak" butt
 - [EchoStretch](https://github.com/EchoStretch) | [kstuff](https://github.com/EchoStretch/kstuff)
 - [voidwhisper-ps](https://github.com/voidwhisper-ps) | [ShadowMount](https://github.com/voidwhisper-ps/ShadowMount)
 - [drakmor](https://github.com/drakmor) | [ftpsrv](https://github.com/drakmor/ftpsrv)
+- [john-tornblom](https://github.com/john-tornblom) | [websrv](https://github.com/ps5-payload-dev/websrv)
 
 ## Bugs & Feature Requests
 
