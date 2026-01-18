@@ -7,3 +7,36 @@ html.dark .input-field { background-color: #000000; border-color: #333; color: w
 html:not(.dark) body { background-color: #f3f4f6; color: #111827; }
 html:not(.dark) .surface { background-color: #ffffff; border-color: #e5e7eb; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
 html:not(.dark) .input-field { background-color: #f9fafb; border-color: #d1d5db; color: #111827; }
+
+.draggable-item {
+    cursor: grab;
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s, border-color 0.2s;
+}
+
+.draggable-item:active {
+    cursor: grabbing;
+}
+
+.draggable-item.dragging {
+    opacity: 0.5;
+    background: rgba(0, 67, 156, 0.2);
+    border-color: #00439c;
+    transform: scale(0.98);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+}
+
+.drag-handle {
+    cursor: grab;
+    padding: 0.5rem;
+    margin-right: 0.5rem;
+    color: rgba(255, 255, 255, 0.2);
+    transition: color 0.2s;
+}
+
+.draggable-item:hover .drag-handle {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.drag-handle:hover {
+    color: #fff;
+}

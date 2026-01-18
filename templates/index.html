@@ -41,6 +41,7 @@
     <script src="{{ url_for('static', filename='color_mode.js') }}" defer></script>
     <script src="{{ url_for('static', filename='direct.js') }}" defer></script>
     <script src="{{ url_for('static', filename='toast.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='drag_sort.js') }}" defer></script> 
     <script src="{{ url_for('static', filename='index.js') }}" defer></script>
 </head>
 
@@ -68,7 +69,10 @@
                         <i class="fa-solid fa-heart"></i>
                         <span>Credits</span>
                     </a>
-
+                    <a href="{{ url_for('ftp_page') }}" class="text-xs input-field px-3 py-1.5 rounded-lg border flex items-center gap-2 opacity-60 hover:opacity-100 transition-opacity">
+                        <i class="fa-solid fa-folder-tree"></i>
+                        <span>FTP - Experimental</span>
+                    </a>
                     <button onclick="toggleTheme()" class="w-10 h-10 rounded-full flex items-center justify-center surface border transition-all hover:scale-105 active:scale-95 hover:border-brand-blue/30">
                         <i id="theme-icon" class="fa-solid fa-moon"></i>
                     </button>
@@ -178,5 +182,27 @@
 
     </main>
 
+    <footer class="w-full border-t surface/90 backdrop-blur-md border-white/5 py-4 mt-auto">
+        <div class="max-w-4xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] uppercase font-bold tracking-widest opacity-60">
+            
+            <div class="flex items-center gap-6">
+                <div class="flex items-center gap-2" title="The IP address of this WebUI server">
+                    <i class="fa-solid fa-server"></i>
+                    <span>Server: <span id="server-ip" class="text-brand-light">Loading...</span></span>
+                </div>
+                
+                <div class="flex items-center gap-2" title="Your device's IP address">
+                    <i class="fa-solid fa-laptop-code"></i>
+                    <span>Client: <span id="client-ip" class="text-brand-light">Loading...</span></span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-code-branch"></i>
+                <span>Y2JB WebUI</span>
+            </div>
+
+        </div>
+    </footer>
 </body>
 </html>

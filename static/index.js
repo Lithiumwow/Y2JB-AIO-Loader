@@ -1,6 +1,20 @@
 document.addEventListener('DOMContentLoaded', () => {
     loadsettings();
     loadTheme(); 
+    fetch("/api/network_info")
+        .then(r => r.json())
+        .then(info => {
+            const serverIpEl = document.getElementById("server-ip");
+            const clientIpEl = document.getElementById("client-ip");
+            if (serverIpEl) serverIpEl.textContent = info.server_ip || "Unknown";
+            if (clientIpEl) clientIpEl.textContent = info.client_ip || "Unknown";
+        })
+        .catch(() => {
+            const serverIpEl = document.getElementById("server-ip");
+            const clientIpEl = document.getElementById("client-ip");
+            if (serverIpEl) serverIpEl.textContent = "Unknown";
+            if (clientIpEl) clientIpEl.textContent = "Unknown";
+        });
 });
 
 async function readJSON(filename) {
@@ -75,7 +89,6 @@ async function saveIP() {
 async function loadIP() {
     try {
         const savedIP = await getJSONValue('static/config/settings.json', 'ip');
-        // Better check to handle undefined values
         if (savedIP) {
             document.getElementById('IP').value = savedIP;
         } else {
@@ -269,10 +282,72 @@ async function loadsettings() {
     await loadpayloads();
 }
 
+async function togglePayloadIndex(filename, checkbox) {
+    const enabled = checkbox.checked;
+    const configKey = filename.split('/').pop(); 
+
+    try {
+        const response = await fetch('/api/payload_config/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename: configKey, enabled })
+        });
+        
+        if(!response.ok) throw new Error("API Error");
+
+        Toast.show(`${configKey} ${enabled ? 'enabled' : 'disabled'} for autoload`, 'info');
+
+    } catch (e) {
+        console.error(e);
+        Toast.show('Failed to update setting', 'error');
+        checkbox.checked = !enabled;
+    }
+}
+
+async function togglePayloadDelay(filename, btn) {
+    const isEnabled = btn.classList.contains('text-brand-light');
+    const newState = !isEnabled;
+
+    if (newState) {
+        btn.classList.add('bg-brand-blue/20', 'text-brand-light', 'border-brand-blue/50');
+        btn.classList.remove('opacity-40', 'hover:opacity-100');
+    } else {
+        btn.classList.remove('bg-brand-blue/20', 'text-brand-light', 'border-brand-blue/50');
+        btn.classList.add('opacity-40', 'hover:opacity-100');
+    }
+
+    try {
+        const response = await fetch('/api/payload_delays/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename, enabled: newState })
+        });
+
+        if(response.ok) {
+             Toast.show(`Delay ${newState ? 'enabled' : 'disabled'} for ${filename}`, 'info');
+        } else {
+            throw new Error("API Error");
+        }
+    } catch (e) {
+        console.error(e);
+        Toast.show('Failed to toggle delay', 'error');
+    }
+}
+
 async function loadpayloads() {
     try {
-        const response = await fetch('/list_payloads');
-        const files = await response.json();
+        const [filesRes, configRes, orderRes, delaysRes] = await Promise.all([
+            fetch('/list_payloads'),
+            fetch('/api/payload_config'),
+            fetch('/api/payload_order'),
+            fetch('/api/payload_delays')
+        ]);
+        
+        let files = await filesRes.json();
+        const config = await configRes.json();
+        const order = await orderRes.json();
+        const delays = await delaysRes.json();
+
         const listElement = document.getElementById('PL');
         const countElement = document.getElementById('payload-count');
 
@@ -289,23 +364,61 @@ async function loadpayloads() {
 
         document.getElementById('empty-state').classList.add('hidden');
 
+        if (order && order.length > 0) {
+            const weights = {};
+            order.forEach((name, index) => weights[name] = index);
+            files.sort((a, b) => {
+                const wa = weights[a.split('/').pop()] ?? 9999;
+                const wb = weights[b.split('/').pop()] ?? 9999;
+                return wa - wb;
+            });
+        }
+
         files.forEach(file => {
+            const configKey = file.split('/').pop();
+            const isEnabled = config[configKey] !== false && config[file] !== false;
+            const delayEnabled = delays[configKey] === true;
+
             const card = document.createElement('li');
-            card.className = "input-field border rounded-xl p-4 flex items-center justify-between group transition-colors hover:border-brand-blue";
+            card.className = "draggable-item input-field border rounded-xl p-2 pr-4 flex items-center justify-between group transition-colors hover:border-brand-blue mb-3 bg-black/20";
+            card.draggable = true;
+            card.dataset.filename = configKey;
             
+            const delayClass = delayEnabled 
+                ? "bg-brand-blue/20 text-brand-light border-brand-blue/50" 
+                : "opacity-40 hover:opacity-100 border-transparent";
+
             card.innerHTML = `
-                <div class="flex items-center gap-4 overflow-hidden">
-                    <div class="p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                <div class="flex items-center gap-2 overflow-hidden flex-1">
+                    <div class="drag-handle touch-manipulation">
+                        <i class="fa-solid fa-grip-vertical"></i>
+                    </div>
+
+                    <div class="p-3 bg-gray-100 dark:bg-gray-800 rounded-lg shrink-0">
                         <i class="fa-solid fa-microchip text-xl opacity-70"></i>
                     </div>
-                    <div class="flex flex-col overflow-hidden">
+                    <div class="flex flex-col overflow-hidden min-w-0">
                         <span class="font-medium text-sm truncate" title="${file}">${file}</span>
                         <span class="text-[10px] opacity-50 uppercase tracking-wide">Payload</span>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-2">
-                    <button onclick="SendPayload('payloads/${file}')" class="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-brand-blue hover:text-white rounded-lg text-xs font-bold transition-colors">
+                <div class="flex items-center gap-3 shrink-0 ml-4">
+                    <button onclick="togglePayloadDelay('${configKey}', this)" 
+                        class="px-2 py-1 rounded transition-all border ${delayClass}" 
+                        title="Toggle Delay">
+                        <i class="fa-solid fa-stopwatch text-xs"></i>
+                    </button>
+
+                    <div class="flex items-center gap-2 border-r pr-3 border-gray-300 dark:border-gray-700" title="Enable Autoload">
+                        <span class="text-[10px] opacity-40 font-bold uppercase hidden sm:inline">Auto</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" class="sr-only peer" onchange="togglePayloadIndex('${file}', this)" ${isEnabled ? 'checked' : ''}>
+                            <div class="w-7 h-4 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-brand-blue"></div>
+                        </label>
+                    </div>
+
+                    <button onclick="SendPayload('payloads/${file}')" class="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-brand-blue hover:text-white rounded-lg text-xs font-bold transition-colors shadow-sm">
                         LOAD
                     </button>
                     <button onclick="DeletePayload('${file}')" class="p-2 text-gray-400 hover:text-red-500 transition-colors">
@@ -315,8 +428,16 @@ async function loadpayloads() {
             `;
             listElement.appendChild(card);
         });
+
+        if (typeof enableDragSort === "function") {
+            enableDragSort('PL', () => {
+                saveCurrentOrder('PL');
+            });
+        }
+
     } catch (e) {
         console.error(e);
+        Toast.show('Failed to load payloads', 'error');
     }
 }
 
