@@ -545,7 +545,7 @@ def handle_settings():
             new_settings = request.get_json()
             current_config = get_config()
             
-            valid_keys = ['ip', 'ajb', 'ftp_port']
+            valid_keys = ['ip', 'ajb', 'ftp_port', 'global_delay', 'ui_animations']
             for key in valid_keys:
                 if key in new_settings:
                     current_config[key] = str(new_settings[key])
