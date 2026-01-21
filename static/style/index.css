@@ -40,3 +40,36 @@ html:not(.dark) .input-field { background-color: #f9fafb; border-color: #d1d5db;
 .drag-handle:hover {
     color: #fff;
 }
+
+.drag-highlight {
+    background-color: transparent !important;
+}
+/* KURWAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA*/
+body.drag-highlight::after {
+    content: "↑ DROP TO UPLOAD PAYLOAD";
+    position: fixed;
+    inset: 1.5rem;
+    background-color: rgba(0, 0, 0, 0.8);
+    border: 2px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 2rem;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    pointer-events: none;
+    box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.8);
+    transition: all 0.3s ease;
+    animation: drag-pulse 2s infinite;
+}
+
+@keyframes drag-pulse {
+    0% { border-color: rgba(255, 255, 255, 0.1); transform: scale(1); }
+    50% { border-color: rgba(0, 112, 209, 0.3); transform: scale(1.005); }
+    100% { border-color: rgba(255, 255, 255, 0.1); transform: scale(1); }
+}

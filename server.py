@@ -350,11 +350,18 @@ def sending_payload():
             time.sleep(10)
             
             if result:
-                print(f"[SEND] kstuff.elf -> {host}:9021")
-                result = send_payload(file_path='payloads/kstuff.elf', host=host, port=9021)
-                time.sleep(10)
+                global_config = get_config()
+                kstuff_enabled = global_config.get("kstuff", "true") == "true"
+                kstuff_result = True 
+
+                if kstuff_enabled:
+                    print(f"[SEND] kstuff.elf -> {host}:9021")
+                    kstuff_result = send_payload(file_path='payloads/kstuff.elf', host=host, port=9021)
+                    time.sleep(10)
+                else:
+                    print("[SKIP] kstuff.elf (Disabled in Settings)")
                 
-                if result:
+                if kstuff_result:
                     files = os.listdir(PAYLOAD_DIR)
                     try:
                         order = get_payload_order()
@@ -545,7 +552,7 @@ def handle_settings():
             new_settings = request.get_json()
             current_config = get_config()
             
-            valid_keys = ['ip', 'ajb', 'ftp_port', 'global_delay', 'ui_animations']
+            valid_keys = ['ip', 'ajb', 'ftp_port', 'global_delay', 'ui_animations', 'kstuff']
             for key in valid_keys:
                 if key in new_settings:
                     current_config[key] = str(new_settings[key])

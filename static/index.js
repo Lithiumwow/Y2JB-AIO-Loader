@@ -1,6 +1,7 @@
 /**
  * The Whole Thingymabob
  * it does the thingy, will document later, have to because uhm, we havent documented anything yet
+ * + handles the drag and drop for payloads *ay im getting there with documentation*
  */
 document.addEventListener('DOMContentLoaded', () => {
     loadsettings();
@@ -19,6 +20,50 @@ document.addEventListener('DOMContentLoaded', () => {
             if (serverIpEl) serverIpEl.textContent = "Unknown";
             if (clientIpEl) clientIpEl.textContent = "Unknown";
         });
+
+    const dropZone = document.body;
+    const fileInput = document.getElementById('fileInput');
+    let dragLeaveTimer;
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    dropZone.addEventListener('dragenter', (e) => {
+        dropZone.classList.add('drag-highlight');
+        clearTimeout(dragLeaveTimer);
+    }, false);
+
+    dropZone.addEventListener('dragover', (e) => {
+        dropZone.classList.add('drag-highlight');
+        clearTimeout(dragLeaveTimer);
+    }, false);
+
+    dropZone.addEventListener('dragleave', (e) => {
+        dragLeaveTimer = setTimeout(() => {
+            dropZone.classList.remove('drag-highlight');
+        }, 100);
+    }, false);
+
+    dropZone.addEventListener('drop', (e) => {
+        clearTimeout(dragLeaveTimer);
+        dropZone.classList.remove('drag-highlight');
+
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files.length > 0) uploadPayload(files[0]);
+    });
+
+    if (fileInput) {
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) uploadPayload(fileInput.files[0]);
+        });
+    }
 });
 
 async function readJSON(filename) {
@@ -44,10 +89,11 @@ async function getJSONValue(filename, property) {
     }
 }
 
-async function uploadPayload() {
+async function uploadPayload(droppedFile = null) {
     const fileInput = document.getElementById('fileInput');
-    const file = fileInput.files[0];
     const upBtn = document.getElementById('UPB');
+
+    const file = (droppedFile instanceof File) ? droppedFile : fileInput.files[0];
 
     if (!file) {
         Toast.show('Please select a file first', 'error');
@@ -70,7 +116,9 @@ async function uploadPayload() {
         if (!response.ok) throw new Error(`Status ${response.status}`);
 
         Toast.show(`Successfully uploaded ${file.name}`, 'success');
-        fileInput.value = "";
+        
+        if (!droppedFile) fileInput.value = "";
+        
         await loadpayloads();
 
     } catch (error) {

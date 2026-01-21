@@ -17,6 +17,9 @@ async function loadSettings() {
         const ajbCheckbox = document.getElementById('ajb');
         ajbCheckbox.checked = config.ajb === 'true';
 
+        const kstuffCheckbox = document.getElementById('kstuff-toggle');
+        if (kstuffCheckbox) kstuffCheckbox.checked = config.kstuff !== 'false';
+
         const animCheckbox = document.getElementById('ui_animations');
         const animationsEnabled = config.ui_animations === 'true';
         animCheckbox.checked = animationsEnabled;
@@ -34,6 +37,7 @@ async function saveAllSettings() {
     const ftpPort = document.getElementById('ftp_port').value;
     const globalDelay = document.getElementById('global_delay').value;
     const ajb = document.getElementById('ajb').checked ? "true" : "false";
+    const kstuff = document.getElementById('kstuff-toggle').checked ? "true" : "false";
     const uiAnimations = document.getElementById('ui_animations').checked ? "true" : "false";
 
     const payload = {
@@ -41,6 +45,7 @@ async function saveAllSettings() {
         ftp_port: ftpPort,
         global_delay: globalDelay,
         ajb: ajb,
+        kstuff: kstuff,
         ui_animations: uiAnimations
     };
 
