@@ -20,6 +20,7 @@ from flask import send_file
 import uuid
 from src.dns_server import DNSServer
 from src.backpork.core import BackporkEngine
+from src.features import setup_logging, run_startup_tasks
 
 app = Flask(__name__)
 app.secret_key = 'Nazky'
@@ -553,7 +554,11 @@ def handle_settings():
             new_settings = request.get_json()
             current_config = get_config()
             
-            valid_keys = ['ip', 'ajb', 'ftp_port', 'global_delay', 'ui_animations', 'kstuff']
+            valid_keys = [
+                'ip', 'ajb', 'ftp_port', 'global_delay', 
+                'ui_animations', 'kstuff', 'debug_mode', 
+                'auto_update_repos', 'dns_auto_start', 'compact_mode'
+            ]
             for key in valid_keys:
                 if key in new_settings:
                     current_config[key] = str(new_settings[key])
@@ -731,6 +736,12 @@ def run_backpork_process():
     return Response(BackporkEngine.run_process(data), mimetype='text/event-stream')
 
 if __name__ == "__main__":
+    config = get_config()
+    
+    setup_logging(config)
+    
+    run_startup_tasks(config)
+
     threading.Thread(target=check_ajb, daemon=True).start()
 
     try:
@@ -741,9 +752,11 @@ if __name__ == "__main__":
     except:
         local_ip = "127.0.0.1"
 
-    print(f"--- Initializing DNS Server on {local_ip} ---")
-    
-    dns_service = DNSServer(config_file=DNS_CONFIG_FILE, host_ip=local_ip)
-    threading.Thread(target=dns_service.start, daemon=True).start()
+    if config.get("dns_auto_start", "true") == "true":
+        print(f"--- Initializing DNS Server on {local_ip} ---")
+        dns_service = DNSServer(config_file=DNS_CONFIG_FILE, host_ip=local_ip)
+        threading.Thread(target=dns_service.start, daemon=True).start()
+    else:
+        print("[STARTUP] DNS Server disabled by settings")
 
-    app.run(host="0.0.0.0", port=8000, debug=False)
+    app.run(host="0.0.0.0", port=8000, debug=(config.get("debug_mode") == "true"))

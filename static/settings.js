@@ -7,16 +7,9 @@ async function loadSettings() {
 
         if (config.ip) document.getElementById('ip').value = config.ip;
         if (config.ftp_port) document.getElementById('ftp_port').value = config.ftp_port;
+        document.getElementById('global_delay').value = config.global_delay || "5";
         
-        if (config.global_delay) {
-            document.getElementById('global_delay').value = config.global_delay;
-        } else {
-            document.getElementById('global_delay').value = "5";
-        }
-        
-        const ajbCheckbox = document.getElementById('ajb');
-        ajbCheckbox.checked = config.ajb === 'true';
-
+        document.getElementById('ajb').checked = config.ajb === 'true';
         const kstuffCheckbox = document.getElementById('kstuff-toggle');
         if (kstuffCheckbox) kstuffCheckbox.checked = config.kstuff !== 'false';
 
@@ -24,6 +17,14 @@ async function loadSettings() {
         const animationsEnabled = config.ui_animations === 'true';
         animCheckbox.checked = animationsEnabled;
         
+        document.getElementById('debug_mode').checked = config.debug_mode === 'true';
+        document.getElementById('auto_update_repos').checked = config.auto_update_repos !== 'false';
+        document.getElementById('dns_auto_start').checked = config.dns_auto_start !== 'false';
+        
+        const compactCheckbox = document.getElementById('compact_mode');
+        compactCheckbox.checked = config.compact_mode === 'true';
+        if (compactCheckbox.checked) document.body.classList.add('compact-mode');
+
         localStorage.setItem('animations', animationsEnabled);
 
     } catch (error) {
@@ -33,20 +34,17 @@ async function loadSettings() {
 }
 
 async function saveAllSettings() {
-    const ip = document.getElementById('ip').value;
-    const ftpPort = document.getElementById('ftp_port').value;
-    const globalDelay = document.getElementById('global_delay').value;
-    const ajb = document.getElementById('ajb').checked ? "true" : "false";
-    const kstuff = document.getElementById('kstuff-toggle').checked ? "true" : "false";
-    const uiAnimations = document.getElementById('ui_animations').checked ? "true" : "false";
-
     const payload = {
-        ip: ip,
-        ftp_port: ftpPort,
-        global_delay: globalDelay,
-        ajb: ajb,
-        kstuff: kstuff,
-        ui_animations: uiAnimations
+        ip: document.getElementById('ip').value,
+        ftp_port: document.getElementById('ftp_port').value,
+        global_delay: document.getElementById('global_delay').value,
+        ajb: document.getElementById('ajb').checked ? "true" : "false",
+        kstuff: document.getElementById('kstuff-toggle').checked ? "true" : "false",
+        ui_animations: document.getElementById('ui_animations').checked ? "true" : "false",
+        debug_mode: document.getElementById('debug_mode').checked ? "true" : "false",
+        auto_update_repos: document.getElementById('auto_update_repos').checked ? "true" : "false",
+        dns_auto_start: document.getElementById('dns_auto_start').checked ? "true" : "false",
+        compact_mode: document.getElementById('compact_mode').checked ? "true" : "false"
     };
 
     try {
@@ -61,7 +59,8 @@ async function saveAllSettings() {
         const result = await response.json();
 
         if (result.success) {
-            localStorage.setItem('animations', uiAnimations);
+            document.body.classList.toggle('compact-mode', payload.compact_mode === "true");
+            localStorage.setItem('animations', payload.ui_animations === "true");
             Toast.show('Settings saved successfully!', 'success');
         } else {
             Toast.show('Error: ' + result.error, 'error');
