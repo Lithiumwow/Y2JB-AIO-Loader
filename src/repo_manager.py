@@ -89,6 +89,10 @@ def update_payloads(targets=['all']):
         save_path = config.get('save_path')
         token = config.get('token')
         
+        if save_path and save_path.lower().endswith('.elf'):
+            filename = os.path.basename(save_path)
+            save_path = os.path.join(PAYLOAD_DIR, 'elf', filename)
+
         if config.get('type') == 'direct':
             download_url = config.get('url')
         elif config.get('type') == 'release':
