@@ -392,6 +392,16 @@ def sending_payload():
                     except Exception as e:
                         print(f"[SORT] Error sorting payloads: {e}")
 
+                    active_payloads = []
+                    for f in files:
+                        if (config.get(f, True) and config.get(os.path.basename(f), True)):
+                             active_payloads.append(f)
+                    
+                    print(f"--- Active Payloads in Queue: {len(active_payloads)} ---")
+                    for p in active_payloads:
+                        print(f"  • {p}")
+                    print("-----------------------------------")
+
                     delay_flags = get_payload_delay_flags()
                     global_config = get_config()
                     try:
@@ -400,8 +410,7 @@ def sending_payload():
                         delay_time = 5.0
 
                     for filename in files:
-                        if not config.get(filename, True):
-                            print(f"[SKIP] {filename} (Disabled in settings)")
+                        if not config.get(filename, True) or not config.get(os.path.basename(filename), True):
                             continue
 
                         if (fnmatch.fnmatch(filename, '*.bin') or fnmatch.fnmatch(filename, '*.elf')) and 'kstuff.elf' not in filename:
