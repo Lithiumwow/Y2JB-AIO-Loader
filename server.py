@@ -224,7 +224,14 @@ def home():
     global _download0_auto_check_done
     if not _download0_auto_check_done:
         threading.Thread(target=_run_download0_auto_update, daemon=True).start()
-    return render_template('index.html')
+    config = get_config()
+    ps5_ip = (config.get('ip') or '').strip()
+    voidshell_port = config.get('voidshell_port') or '7007'
+    try:
+        int(voidshell_port)
+    except (ValueError, TypeError):
+        voidshell_port = '7007'
+    return render_template('index.html', ps5_ip=ps5_ip, voidshell_port=voidshell_port)
 
 @app.route('/api/payload_config', methods=['GET'])
 def get_payload_config_route():
@@ -654,7 +661,7 @@ def handle_settings():
             current_config = get_config()
             
             valid_keys = [
-                'ip', 'ajb', 'ftp_port', 'loader_port', 'global_delay', 
+                'ip', 'ajb', 'ftp_port', 'loader_port', 'voidshell_port', 'global_delay', 
                 'ui_animations', 'kstuff', 'debug_mode', 
                 'auto_update_repos', 'dns_auto_start', 'compact_mode'
             ]
@@ -841,6 +848,76 @@ def backpork_page():
 @app.route('/account-activator')
 def account_activator_page():
     return render_template('account_activator.html')
+
+@app.route('/voidshell')
+def voidshell_page():
+    config = get_config()
+    ps5_ip = (config.get('ip') or '').strip()
+    voidshell_port = config.get('voidshell_port') or '7007'
+    try:
+        int(voidshell_port)
+    except (ValueError, TypeError):
+        voidshell_port = '7007'
+    y2jb_home_url = (request.url_root or 'http://172.16.0.28:8000/').rstrip('/')
+    return render_template('voidshell.html', ps5_ip=ps5_ip, voidshell_port=voidshell_port, y2jb_home_url=y2jb_home_url)
+
+# In-memory cache for voidshell proxy (assets only) to speed up icon loading
+_voidshell_proxy_cache = {}
+_VOIDSHELL_CACHE_TTL = 300  # 5 min for assets
+_VOIDSHELL_CACHE_MAX = 500   # max entries
+
+@app.route('/api/voidshell_proxy/<path:subpath>', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH'])
+def voidshell_proxy(subpath):
+    """Proxy requests to voidshell.elf on PS5 to avoid CORS (browser blocks cross-origin to PS5)."""
+    config = get_config()
+    ip = (config.get('ip') or '').strip()
+    port = config.get('voidshell_port') or '7007'
+    try:
+        int(port)
+    except (ValueError, TypeError):
+        port = '7007'
+    if not ip:
+        return jsonify({"error": "PS5 IP not set in Settings"}), 400
+    base = f"http://{ip}:{port}"
+    url = f"{base}/{subpath}"
+    if request.query_string:
+        url += '?' + request.query_string.decode()
+    cache_key = None
+    asset_headers = {}
+    if request.method == 'GET' and subpath.startswith('assets/'):
+        cache_key = url
+        # Let the browser cache icons/pics so we don't re-fetch every time (avoids slow re-cache)
+        asset_headers = {'Cache-Control': 'public, max-age=86400'}  # 1 day
+        if cache_key in _voidshell_proxy_cache:
+            entry = _voidshell_proxy_cache[cache_key]
+            if entry and (time.time() - entry['ts']) < _VOIDSHELL_CACHE_TTL:
+                resp = Response(entry['content'], status=entry['status'], mimetype=entry.get('mimetype', 'application/octet-stream'))
+                resp.headers['Cache-Control'] = 'public, max-age=86400'
+                return resp
+    try:
+        kwargs = {"timeout": 30}
+        if request.method in ('POST', 'PUT', 'PATCH') and request.get_data():
+            kwargs["data"] = request.get_data()
+            if request.content_type:
+                kwargs["headers"] = {'Content-Type': request.content_type}
+        r = requests.request(request.method, url, **kwargs)
+        if cache_key and r.status_code == 200 and len(r.content) < 5 * 1024 * 1024:
+            while len(_voidshell_proxy_cache) >= _VOIDSHELL_CACHE_MAX:
+                oldest = min(_voidshell_proxy_cache.items(), key=lambda x: x[1]['ts'])
+                del _voidshell_proxy_cache[oldest[0]]
+            _voidshell_proxy_cache[cache_key] = {
+                'content': r.content, 'status': r.status_code,
+                'mimetype': r.headers.get('Content-Type', 'application/octet-stream'), 'ts': time.time()
+            }
+        resp = Response(r.content, status=r.status_code, mimetype=r.headers.get('Content-Type', 'application/octet-stream'))
+        resp.headers.update(asset_headers)
+        return resp
+    except requests.exceptions.ConnectTimeout:
+        return jsonify({"error": "Connection to PS5 timed out"}), 504
+    except requests.exceptions.ConnectionError as e:
+        return jsonify({"error": "Cannot reach PS5 (voidshell.elf not running?)", "detail": str(e)}), 502
+    except Exception as e:
+        return jsonify({"error": str(e)}), 502
 
 @app.route('/api/backpork/test_ftp', methods=['POST'])
 def api_backpork_test_ftp():

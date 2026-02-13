@@ -9,6 +9,8 @@ async function loadSettings() {
         if (config.ftp_port) document.getElementById('ftp_port').value = config.ftp_port;
         const loaderPortEl = document.getElementById('loader_port');
         if (loaderPortEl) loaderPortEl.value = config.loader_port || '50000';
+        const voidshellPortEl = document.getElementById('voidshell_port');
+        if (voidshellPortEl) voidshellPortEl.value = config.voidshell_port || '7007';
         document.getElementById('global_delay').value = config.global_delay || "5";
         
         document.getElementById('ajb').checked = config.ajb === 'true';
@@ -40,6 +42,7 @@ async function saveAllSettings() {
         ip: document.getElementById('ip').value,
         ftp_port: document.getElementById('ftp_port').value,
         loader_port: (document.getElementById('loader_port') && document.getElementById('loader_port').value) ? document.getElementById('loader_port').value : '50000',
+        voidshell_port: (document.getElementById('voidshell_port') && document.getElementById('voidshell_port').value) ? document.getElementById('voidshell_port').value : '7007',
         global_delay: document.getElementById('global_delay').value,
         ajb: document.getElementById('ajb').checked ? "true" : "false",
         kstuff: document.getElementById('kstuff-toggle').checked ? "true" : "false",

@@ -24,8 +24,12 @@
                     fontFamily: { sans: ['Noto Sans', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'] },
                     colors: {
                         ps5: { black: '#0a0a0f', surface: '#14141a', card: '#1a1a22', blue: '#006FCD', blueLight: '#2180e0' },
-                        brand: { blue: '#006FCD', light: '#2180e0' }
-                    }
+                        brand: { blue: '#006FCD', light: '#2180e0' },
+                        void: { 900: '#050507', 800: '#0a0e17', 700: '#151926', card: 'rgba(20, 24, 39, 0.7)' },
+                        neon: { purple: '#8b5cf6', blue: '#3b82f6', pink: '#ec4899', green: '#10b981', red: '#ef4444', yellow: '#f59e0b', orange: '#f97316' }
+                    },
+                    animation: { 'slideIn': 'slideIn 0.3s ease-out forwards', 'slideUp': 'slideUp 0.3s ease-out forwards', 'fadeIn': 'fadeIn 0.5s ease-out forwards' },
+                    keyframes: { slideIn: { '0%': { transform: 'translateX(100%)', opacity: '0' }, '100%': { transform: 'translateX(0)', opacity: '1' } }, slideUp: { '0%': { transform: 'translateY(20px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } }, fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } } }
                 }
             }
         }
@@ -85,18 +89,28 @@
         html:not(.dark) .text-white\/70 { color: rgba(17,24,39,0.8) !important; }
         html:not(.dark) .text-white\/80 { color: rgba(17,24,39,0.9) !important; }
         html:not(.dark) .text-white\/90 { color: #111827 !important; }
+        .voidshell-embed .glass { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        html.dark .voidshell-embed .glass { background: rgba(20, 24, 39, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .voidshell-embed .glass { background: rgba(255, 255, 255, 0.75); border: 1px solid rgba(0, 0, 0, 0.05); }
     </style>
 </head>
 
 <body class="font-sans antialiased min-h-screen flex flex-col transition-colors duration-300 ps5-bg ps5-body text-white">
+    <script>
+        window.VOIDSHELL_PS5_HOST = '{{ ps5_ip|e }}';
+        window.VOIDSHELL_PS5_PORT = {{ voidshell_port|default(7007) }};
+        window.VOIDSHELL_EMBEDDED = true;
+        window.VOIDSHELL_ROOT_ID = 'voidshell-root';
+        window.VOIDSHELL_USE_PROXY = true;
+    </script>
 
 <nav class="relative w-full border-b border-white/5">
     <div class="mx-auto px-4 sm:px-4 lg:px-8">
         <div class="relative flex h-16 items-center justify-between">
-            <div class="flex items-center gap-2">
+            <a href="/" class="flex items-center gap-2">
                 <i class="fa-brands fa-playstation text-3xl"></i>
                 <span class="font-bold text-xl tracking-tight">Y2JB</span>
-            </div>
+            </a>
             <div class="absolute inset-y-0 right-0 flex items-center gap-2 lg:hidden">
                 <button onclick="toggleTheme()"
                         class="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95">
@@ -153,6 +167,11 @@
                     <i class="fa-solid fa-user-check"></i>
                     <span>Activator</span>
                 </a>
+                <a href="{{ url_for('voidshell_page') }}"
+                   class="text-xs input-field px-3 py-1.5 rounded-lg border flex items-center gap-2 opacity-60 hover:opacity-100 transition-opacity">
+                    <i class="fa-solid fa-ghost"></i>
+                    <span>VoidShell</span>
+                </a>
                 <button onclick="toggleTheme()"
                         class="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95">
                     <i id="theme-icon" class="fa-solid fa-moon"></i>
@@ -208,11 +227,16 @@
                 <i class="fa-solid fa-user-check"></i>
                 <span>Activator</span>
             </a>
+            <a href="{{ url_for('voidshell_page') }}"
+               class="text-sm input-field px-3 py-1.5 rounded-lg flex items-center gap-2 opacity-60 hover:opacity-100 transition-opacity">
+                <i class="fa-solid fa-ghost"></i>
+                <span>VoidShell</span>
+            </a>
         </div>
     </div>
 </nav>
 
-<main class="flex-1 w-full max-w-4xl mx-auto px-4 py-6 space-y-6">
+<main class="flex-1 w-full max-w-6xl mx-auto px-4 py-6 space-y-6">
 
     <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="ps5-card p-4">
@@ -233,6 +257,11 @@
                         <span class="ajb-toggle-thumb"></span>
                     </label>
                 </div>
+                <button id="SJB" type="button" class="touch-manipulation w-full min-h-[48px] ps5-btn-primary text-sm font-semibold flex items-center justify-center gap-2 rounded-xl uppercase relative overflow-hidden group">
+                    <i class="fa-brands fa-playstation absolute right-2 bottom-2 text-2xl text-white/10 group-hover:scale-110 transition-transform duration-300"></i>
+                    <i class="fa-solid fa-bolt text-lg text-yellow-300/90 relative z-10"></i>
+                    <span class="relative z-10">Jailbreak</span>
+                </button>
             </div>
         </div>
 
@@ -256,48 +285,40 @@
             </div>
         </div>
 
-        <div class="md:col-span-2">
-            <button id="SJB" class="touch-manipulation w-full min-h-[100px] ps5-btn-primary text-xl flex items-center justify-center gap-3 tracking-wide uppercase relative overflow-hidden group">
-                <i class="fa-brands fa-playstation absolute -right-4 -bottom-4 text-7xl text-white/10 group-hover:scale-110 transition-transform duration-300"></i>
-                <i class="fa-solid fa-bolt text-2xl group-hover:text-yellow-300 transition-colors relative z-10"></i>
-                <span class="relative z-10">Jailbreak</span>
-            </button>
-        </div>
-
     </section>
 
-    <section class="ps5-card p-4 flex flex-col h-[560px]">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+    <section class="ps5-card p-4 w-full mt-6">
+        <div class="flex flex-col gap-3 mb-4">
             <h3 class="text-sm font-semibold text-white/90 flex items-center gap-2">
                 Payloads
                 <span id="payload-count" class="text-xs font-mono text-ps5-blue bg-ps5-blue/20 px-2 py-0.5 rounded-md">0</span>
             </h3>
-            <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                <div class="flex gap-2">
-                    <input type="text" id="directUrlInput" placeholder="URL (.bin / .elf / .js)"
-                           class="input-field flex-1 min-w-0 px-3 py-2 border rounded-lg text-sm font-mono bg-white/5 border-white/10 focus:ring-2 focus:ring-ps5-blue outline-none">
-                    <button type="button" onclick="directDownload()" class="ps5-btn-ghost px-3 py-2 text-sm shrink-0" title="Download from URL">
-                        <i class="fa-solid fa-cloud-arrow-down"></i>
-                    </button>
-                </div>
-                <div class="flex gap-2">
-                    <input type="file" id="fileInput" accept=".bin,.elf,.js" class="hidden">
-                    <button type="button" onclick="document.getElementById('fileInput').click()" class="ps5-btn-ghost flex-1 sm:flex-none px-4 py-2 text-sm">
-                        Select File
-                    </button>
-                    <button id="UPB" type="button" onclick="uploadPayload()" class="ps5-btn-primary flex-1 sm:flex-none px-4 py-2 text-sm">
-                        Upload
-                    </button>
-                </div>
+            <div class="flex flex-col sm:flex-row gap-2 flex-wrap">
+                <input type="text" id="directUrlInput" placeholder="URL (.bin / .elf / .js)" class="input-field flex-1 min-w-[200px] px-3 py-2 border rounded-lg text-sm font-mono bg-white/5 border-white/10 focus:ring-2 focus:ring-ps5-blue outline-none">
+                <button type="button" onclick="directDownload()" class="ps5-btn-ghost px-3 py-2 text-sm shrink-0" title="Download from URL"><i class="fa-solid fa-cloud-arrow-down"></i></button>
+                <input type="file" id="fileInput" accept=".bin,.elf,.js" class="hidden">
+                <button type="button" onclick="document.getElementById('fileInput').click()" class="ps5-btn-ghost px-4 py-2 text-sm shrink-0">Select File</button>
+                <button id="UPB" type="button" onclick="uploadPayload()" class="ps5-btn-primary px-4 py-2 text-sm shrink-0">Upload</button>
             </div>
         </div>
         <div id="uploadStatus" class="text-xs h-4 mb-2 text-white/50"></div>
-        <div class="flex-1 overflow-y-auto ps5-scroll -mr-1 pr-1 min-h-0">
+        <div class="overflow-y-auto ps5-scroll max-h-[300px] min-h-[180px] -mr-1 pr-1">
             <ul id="PL" class="space-y-2 pb-4"></ul>
-            <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20 text-white/40">
+            <div id="empty-state" class="hidden flex flex-col items-center justify-center py-16 text-white/40">
                 <i class="fa-regular fa-folder-open text-5xl mb-3"></i>
                 <p class="text-sm">No payloads</p>
             </div>
+        </div>
+    </section>
+
+    <section class="ps5-card p-4 min-h-[500px] mt-6" id="voidshell-section">
+        <div class="flex items-center gap-2 mb-4">
+            <i class="fa-solid fa-ghost text-ps5-blue"></i>
+            <h3 class="text-sm font-semibold text-white/90">VoidShell</h3>
+            <span class="text-xs text-white/50">— Load voidshell.elf on PS5 to see library, temps &amp; PKG manager</span>
+        </div>
+        <div id="voidshell-root" class="voidshell-embed min-h-[400px] overflow-hidden rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+            <p class="text-sm text-white/50 animate-pulse">Loading VoidShell…</p>
         </div>
     </section>
 
@@ -325,5 +346,11 @@
         <span><i class="fa-solid fa-code-branch mr-1"></i>Y2JB WebUI</span>
     </div>
 </footer>
+
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script type="text/babel" src="{{ url_for('static', filename='voidshell_app.js') }}"></script>
 </body>
 </html>
