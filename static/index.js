@@ -135,6 +135,30 @@ async function uploadPayload(droppedFile = null) {
     }
 }
 
+async function testLoaderPort() {
+    const ip = (document.getElementById('IP')?.value || '').trim();
+    if (!ip) {
+        if (typeof Toast !== 'undefined') Toast.show('Enter PS5 IP first', 'error');
+        return;
+    }
+    try {
+        const settingsRes = await fetch('/api/settings');
+        const config = settingsRes.ok ? await settingsRes.json() : {};
+        const port = config.loader_port || '50000';
+        const r = await fetch(`/api/check_loader?ip=${encodeURIComponent(ip)}&port=${encodeURIComponent(port)}`);
+        const data = await r.json();
+        if (data.success && data.open) {
+            Toast.show(`Loader reachable at ${ip}:${data.port}`, 'success');
+        } else if (data.success && !data.open) {
+            Toast.show(`Loader port ${ip}:${data.port} not open. Is the loader running?`, 'error');
+        } else {
+            Toast.show(data.error || 'Check failed', 'error');
+        }
+    } catch (e) {
+        Toast.show('Test failed: ' + e.message, 'error');
+    }
+}
+
 async function saveIP() {
     const ipInput = document.getElementById("IP");
     const ipValue = ipInput.value;
@@ -147,16 +171,15 @@ async function saveIP() {
 
 async function loadIP() {
     try {
-        const savedIP = await getJSONValue('static/config/settings.json', 'ip');
-        if (savedIP) {
-            document.getElementById('IP').value = savedIP;
-        } else {
-            document.getElementById('IP').value = '';
-        }
-
+        const res = await fetch('/api/settings');
+        const config = res.ok ? await res.json() : {};
+        const savedIP = config.ip || '';
+        const ipEl = document.getElementById('IP');
+        if (ipEl) ipEl.value = savedIP;
     } catch (error) {
-        console.error('Error:', error);
-        document.getElementById('IP').innerHTML = 'Error loading IP';
+        console.error('Error loading IP:', error);
+        const ipEl = document.getElementById('IP');
+        if (ipEl) ipEl.placeholder = 'Error loading IP';
     }
 }
 
@@ -169,13 +192,13 @@ async function saveAJB() {
 
 async function loadAJB() {
     try {
-        const savedAJB = await getJSONValue('static/config/settings.json', 'ajb');
+        const res = await fetch('/api/settings');
+        const config = res.ok ? await res.json() : {};
+        const savedAJB = config.ajb === true || config.ajb === 'true';
         const checkbox = document.getElementById("AJB-B");
-        const isTrue = (savedAJB === "true");
-        checkbox.checked = isTrue;
+        if (checkbox) checkbox.checked = savedAJB;
     } catch (error) {
-        console.error('Error:', error);
-        document.getElementById('IP').innerHTML = 'Error loading IP';
+        console.error('Error loading AJB:', error);
     }
 }
 
@@ -209,12 +232,11 @@ async function saveFTPPort() {
 
 async function loadFTPPort() {
     try {
-        const savedPort = await getJSONValue('static/config/settings.json', 'ftp_port');
-        if (savedPort) {
-            document.getElementById('FTP_PORT').value = savedPort;
-        } else {
-            document.getElementById('FTP_PORT').value = '1337';
-        }
+        const res = await fetch('/api/settings');
+        const config = res.ok ? await res.json() : {};
+        const savedPort = config.ftp_port || '1337';
+        const el = document.getElementById('FTP_PORT');
+        if (el) el.value = savedPort;
     } catch (error) {
         console.error('Error loading FTP Port:', error);
     }
@@ -474,84 +496,62 @@ async function loadpayloads() {
             const delayEnabled = delays[configKey] === true;
 
             const card = document.createElement('li');
-            card.className = "draggable-item relative input-field border rounded-xl p-2 pr-2 flex items-center justify-between group transition-colors hover:border-brand-blue mb-3 bg-black/20";
+            card.className = "draggable-item ps5-card relative rounded-xl p-3 flex items-center justify-between group transition-all border border-white/5 hover:border-ps5-blue/40";
             card.draggable = true;
             card.dataset.filename = configKey;
 
-            const nameClass = isEnabled 
-                ? "text-brand-light font-bold" 
-                : "opacity-90";
-            
-            const chipClass = isEnabled 
-                ? "text-brand-light opacity-100" 
-                : "opacity-40";
-
-            const delayClass = delayEnabled
-                ? "text-brand-light font-bold"
-                : "opacity-70";
+            const nameClass = isEnabled ? "text-ps5-blue font-semibold" : "text-white/70";
+            const chipClass = isEnabled ? "text-ps5-blue" : "text-white/40";
+            const delayClass = delayEnabled ? "text-ps5-blue font-semibold" : "text-white/60";
 
             card.innerHTML = `
                 <div class="flex items-center gap-2 overflow-hidden flex-1">
-                    <div class="drag-handle touch-manipulation hidden sm:block p-2 cursor-grab active:cursor-grabbing text-white/20 hover:text-white transition-colors">
+                    <div class="drag-handle touch-manipulation hidden sm:block p-2 cursor-grab active:cursor-grabbing text-white/20 hover:text-ps5-blue transition-colors rounded-lg">
                         <i class="fa-solid fa-grip-vertical"></i>
                     </div>
-                    
                     <div class="flex flex-col gap-0.5 sm:hidden px-1">
-                        <button onclick="movePayload('${configKey}', -1)" class="text-white/30 hover:text-brand-light p-1 -mb-1" title="Move Up">
-                            <i class="fa-solid fa-caret-up"></i>
-                        </button>
-                        <button onclick="movePayload('${configKey}', 1)" class="text-white/30 hover:text-brand-light p-1 -mt-1" title="Move Down">
-                            <i class="fa-solid fa-caret-down"></i>
-                        </button>
+                        <button type="button" onclick="movePayload('${configKey}', -1)" class="text-white/40 hover:text-ps5-blue p-1 -mb-1" title="Move Up"><i class="fa-solid fa-caret-up"></i></button>
+                        <button type="button" onclick="movePayload('${configKey}', 1)" class="text-white/40 hover:text-ps5-blue p-1 -mt-1" title="Move Down"><i class="fa-solid fa-caret-down"></i></button>
                     </div>
-
-                    <div class="p-3 bg-gray-100 dark:bg-gray-800 rounded-lg shrink-0">
-                        <i class="fa-solid fa-microchip text-xl ${chipClass} transition-colors"></i>
+                    <div class="p-2.5 bg-white/5 rounded-lg shrink-0">
+                        <i class="fa-solid fa-microchip text-lg ${chipClass} transition-colors"></i>
                     </div>
-                    
                     <div class="flex flex-col overflow-hidden min-w-0 mr-2">
                         <span class="payload-name font-medium text-sm truncate select-none ${nameClass}" title="${file}">${file}</span>
                         <div class="flex items-center gap-1.5">
-                            <span class="text-[10px] opacity-50 uppercase tracking-wide">Payload</span>
-                            <i class="delay-indicator fa-solid fa-stopwatch text-brand-light text-[10px] ${delayEnabled ? '' : 'hidden'}" title="Delayed"></i>
+                            <span class="text-[10px] text-white/40 uppercase tracking-wide">Payload</span>
+                            <i class="delay-indicator fa-solid fa-stopwatch text-ps5-blue text-[10px] ${delayEnabled ? '' : 'hidden'}" title="Delayed"></i>
                         </div>
                     </div>
                 </div>
-
                 <div class="flex items-center gap-2 shrink-0">
-                    <button onclick="SendPayload('payloads/${file}')" class="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-brand-blue hover:text-white rounded-lg text-xs font-bold transition-colors shadow-sm whitespace-nowrap">
-                        LOAD
+                    <button type="button" onclick="SendPayload('payloads/${file}')" class="ps5-btn-primary px-4 py-2 text-xs whitespace-nowrap">
+                        Load
                     </button>
-                    
                     <div class="relative">
-                        <button onclick="toggleDropdown(event, '${configKey}')" class="dropdown-trigger p-2 text-gray-400 hover:text-brand-light transition-colors rounded-lg hover:bg-white/5">
+                        <button type="button" onclick="toggleDropdown(event, '${configKey}')" class="dropdown-trigger p-2 text-white/40 hover:text-ps5-blue transition-colors rounded-lg hover:bg-white/5">
                             <i class="fa-solid fa-ellipsis-vertical text-lg px-1"></i>
                         </button>
-
-                        <div id="dropdown-${configKey}" class="payload-dropdown hidden absolute right-0 top-full mt-2 w-56 bg-white dark:bg-[#1a1a1a] rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
-                            
-                            <label class="w-full flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer">
+                        <div id="dropdown-${configKey}" class="payload-dropdown hidden absolute right-0 top-full mt-2 w-56 rounded-xl shadow-xl border border-white/10 bg-ps5-card overflow-hidden z-50">
+                            <label class="w-full flex items-center justify-between px-4 py-3 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer">
                                 <div class="flex flex-col">
-                                    <span class="text-sm font-medium">Auto Load</span>
-                                    <span class="text-[10px] opacity-50">ajb thingy</span>
+                                    <span class="text-sm font-medium text-white/90">Auto Load</span>
+                                    <span class="text-[10px] text-white/50">AJB</span>
                                 </div>
                                 <div class="relative inline-flex items-center pointer-events-none">
                                     <input type="checkbox" class="sr-only peer" onchange="togglePayloadIndex('${file}', this)" ${isEnabled ? 'checked' : ''}>
-                                    <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-blue"></div>
+                                    <div class="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-ps5-blue peer-checked:after:translate-x-5"></div>
                                 </div>
                             </label>
-
-                            <button onclick="togglePayloadDelay('${configKey}', this)" 
-                                class="w-full flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-left group ${delayClass}">
+                            <button type="button" onclick="togglePayloadDelay('${configKey}', this)" class="w-full flex items-center justify-between px-4 py-3 border-b border-white/5 hover:bg-white/5 transition-colors text-left ${delayClass}">
                                 <div class="flex flex-col">
-                                    <span class="text-sm font-medium">Start Delay</span>
-                                    <span class="text-[10px] opacity-50">Wait before loading</span>
+                                    <span class="text-sm font-medium text-white/90">Start Delay</span>
+                                    <span class="text-[10px] text-white/50">Wait before loading</span>
                                 </div>
-                                <i class="fa-solid fa-stopwatch group-hover:scale-110 transition-transform"></i>
+                                <i class="fa-solid fa-stopwatch text-white/50"></i>
                             </button>
-
-                            <button onclick="DeletePayload('${file}')" class="w-full flex items-center justify-between px-4 py-3 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-left">
-                                <span class="text-sm font-medium">Delete File</span>
+                            <button type="button" onclick="DeletePayload('${file}')" class="w-full flex items-center justify-between px-4 py-3 text-red-400 hover:bg-red-500/10 transition-colors text-left">
+                                <span class="text-sm font-medium">Delete</span>
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </div>

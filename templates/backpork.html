@@ -3,154 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Y2JB - Backpork</title>
+    <script>(function(){var t=localStorage.getItem('theme');if(t==='light')document.documentElement.classList.remove('dark');else document.documentElement.classList.add('dark');})();</script>
+    <link rel="manifest" href="{{ url_for('static', filename='json/manifest.json') }}">
+    <meta name="theme-color" content="#0a0a0f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/icon.png') }}">
+    <title>BackPork - Y2JB</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    fontFamily: { sans: ['Noto Sans', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'] },
                     colors: {
-                        oled: { base: '#000000', surface: '#121212', border: '#2a2a2a' },
-                        brand: { blue: '#00439c', light: '#0070d1' }
+                        ps5: {
+                            black: '#0a0a0f',
+                            surface: '#14141a',
+                            card: '#1a1a22',
+                            border: 'rgba(255,255,255,0.06)',
+                            blue: '#006FCD',
+                            blueLight: '#2180e0',
+                            blueGlow: 'rgba(0,111,205,0.25)',
+                        }
+                    },
+                    boxShadow: {
+                        'ps5': '0 0 0 1px rgba(255,255,255,0.06)',
+                        'ps5-hover': '0 0 0 1px rgba(0,111,205,0.5), 0 8px 24px -8px rgba(0,0,0,0.5)',
+                        'ps5-btn': '0 4px 14px -2px rgba(0,111,205,0.4)',
                     }
                 }
             }
         }
     </script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style/index.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style/light-mode.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style/toast.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style/backpork.css') }}">
-    <script src="{{ url_for('static', filename='toast.js') }}" defer></script>
     <script src="{{ url_for('static', filename='color_mode.js') }}" defer></script>
-    <script src="{{ url_for('static', filename='backpork.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='toast.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='backpork.js') }}?v=20260206-ps5" defer></script>
+    <style>
+        .ps5-bg { background: radial-gradient(ellipse 120% 80% at 50% -20%, rgba(0,111,205,0.08), transparent 50%), #0a0a0f; }
+        .ps5-card { background: #1a1a22; border: 1px solid rgba(255,255,255,0.06); border-radius: 1rem; transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s; }
+        .ps5-card:hover { border-color: rgba(0,111,205,0.4); box-shadow: 0 0 0 1px rgba(0,111,205,0.3), 0 8px 24px -8px rgba(0,0,0,0.4); }
+        .ps5-pill { background: #14141a; border: 1px solid rgba(255,255,255,0.08); border-radius: 9999px; padding: 0.25rem; display: inline-flex; gap: 0.125rem; }
+        .ps5-pill input:checked + span { background: #006FCD; color: white; border-color: transparent; }
+        .ps5-pill label { cursor: pointer; }
+        .ps5-pill span { display: block; padding: 0.5rem 1rem; border-radius: 9999px; font-size: 0.8125rem; font-weight: 500; transition: all 0.2s; border: 1px solid transparent; }
+        .ps5-btn-primary { background: #006FCD; color: white; border-radius: 0.75rem; font-weight: 600; transition: background 0.2s, transform 0.15s; box-shadow: 0 4px 14px -2px rgba(0,111,205,0.4); }
+        .ps5-btn-primary:hover:not(:disabled) { background: #2180e0; transform: translateY(-1px); }
+        .ps5-btn-ghost { background: transparent; border: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.9); border-radius: 0.5rem; transition: all 0.2s; }
+        .ps5-btn-ghost:hover { border-color: rgba(0,111,205,0.5); color: #2180e0; }
+        .ps5-scroll { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent; }
+        .ps5-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .ps5-scroll::-webkit-scrollbar-track { background: transparent; }
+        .ps5-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+    </style>
 </head>
 
-<body class="font-sans antialiased min-h-screen flex flex-col transition-colors duration-300 bg-oled-base text-gray-100">
+<body class="font-sans antialiased min-h-screen flex flex-col bg-ps5-black text-white transition-colors duration-300 ps5-bg">
 
-<nav class="relative w-full border-b border-white/5">
-    <div class="mx-auto px-4 sm:px-4 lg:px-8">
-        <div class="relative flex h-16 items-center justify-between">
-            <a href="/" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                <i class="fa-brands fa-playstation text-3xl"></i>
-                <span class="font-bold text-xl tracking-tight">Y2JB</span>
+<nav class="w-full border-b border-white/5 bg-ps5-black/80 backdrop-blur-xl sticky top-0 z-10">
+    <div class="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
+        <a href="{{ url_for('home') }}" class="flex items-center gap-2.5 text-white/90 hover:text-white transition-colors">
+            <i class="fa-brands fa-playstation text-2xl text-ps5-blue"></i>
+            <span class="font-semibold text-lg tracking-tight">Y2JB</span>
+            <span class="text-white/40 text-sm font-medium">/ BackPork</span>
+        </a>
+        <div class="flex items-center gap-2">
+            <a href="{{ url_for('home') }}" class="ps5-btn-ghost px-3 py-1.5 text-sm flex items-center gap-2">
+                <i class="fa-solid fa-home text-xs"></i> Home
             </a>
-            
-            <div class="items-center gap-2 hidden sm:flex">
-                <a href="/" class="text-xs input-field px-3 py-1.5 rounded-lg border flex items-center gap-2 opacity-60 hover:opacity-100 transition-opacity">
-                    <i class="fa-solid fa-home"></i> <span>Home</span>
-                </a>
-                <button class="text-xs px-3 py-1.5 rounded-lg border flex items-center gap-2 bg-brand-blue text-white shadow-lg shadow-brand-blue/20">
-                    <i class="fa-solid fa-piggy-bank"></i> <span>Auto-Backpork</span>
-                </button>
-                <a href="{{ url_for('settings_page') }}" class="text-xs input-field px-3 py-1.5 rounded-lg border flex items-center gap-2 opacity-60 hover:opacity-100 transition-opacity">
-                    <i class="fa-solid fa-sliders"></i> <span>Settings</span>
-                </a>
-            </div>
+            <button onclick="typeof toggleTheme==='function'&&toggleTheme()" class="w-9 h-9 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/5 transition-all" aria-label="Toggle theme">
+                <i id="theme-icon" class="theme-icon fa-solid fa-moon text-sm"></i>
+            </button>
         </div>
     </div>
 </nav>
 
-<main class="flex-1 w-full max-w-4xl mx-auto px-4 py-8 space-y-8">
-    
-    <div class="surface border rounded-2xl overflow-hidden shadow-2xl relative">
-        <div id="progress-bar" class="absolute top-0 left-0 h-1 bg-pink-500 w-0 transition-all duration-300 z-50"></div>
+<main class="flex-1 w-full max-w-4xl mx-auto px-4 py-6 space-y-6">
 
-        <div class="p-8 space-y-8">
-            <div class="grid grid-cols-3 gap-2 p-1 bg-black/40 rounded-xl border border-white/5">
-                <button onclick="setMode('downgrade')" id="btn-downgrade" class="mode-btn px-4 py-2.5 rounded-lg text-sm font-medium transition-all bg-brand-blue text-white shadow-lg">Downgrade</button>
-                <button onclick="setMode('decrypt')" id="btn-decrypt" class="mode-btn px-4 py-2.5 rounded-lg text-sm font-medium transition-all hover:bg-white/5 text-gray-400 hover:text-white">Decrypt</button>
-                <button onclick="setMode('full')" id="btn-full" class="mode-btn px-4 py-2.5 rounded-lg text-sm font-medium transition-all hover:bg-white/5 text-gray-400 hover:text-white">Full Pipeline</button>
-            </div>
-
-            <div class="space-y-5">
-                <div class="space-y-2">
-                    <label class="text-xs font-bold uppercase tracking-wider opacity-50 ml-1">Input Directory (Server Side)</label>
-                    <div class="relative group">
-                        <i class="fa-regular fa-folder-open absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-brand-light transition-colors"></i>
-                        <input type="text" id="input_path" class="w-full bg-black/20 border border-white/10 rounded-xl py-3.5 pl-11 pr-4 text-sm focus:outline-none focus:border-brand-light/50 focus:ring-1 focus:ring-brand-light/50 transition-all placeholder-white/10" placeholder="C:/PS5/Decrypted_ELFs">
-                    </div>
-                </div>
-
-                <div class="space-y-2">
-                    <label class="text-xs font-bold uppercase tracking-wider opacity-50 ml-1">Output Directory (Server Side)</label>
-                    <div class="relative group">
-                        <i class="fa-regular fa-folder absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-brand-light transition-colors"></i>
-                        <input type="text" id="output_path" class="w-full bg-black/20 border border-white/10 rounded-xl py-3.5 pl-11 pr-4 text-sm focus:outline-none focus:border-brand-light/50 focus:ring-1 focus:ring-brand-light/50 transition-all placeholder-white/10" placeholder="C:/PS5/Signed_SELFs">
-                    </div>
-                </div>
-            </div>
-
-            <div>
-                <button onclick="toggleAdvanced()" class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider opacity-50 hover:opacity-100 transition-opacity">
-                    <i class="fa-solid fa-chevron-right transition-transform" id="adv-arrow"></i>
-                    <span>Advanced Settings</span>
-                </button>
-                
-                <div id="advanced-options" class="hidden mt-4 space-y-5 pt-4 border-t border-white/5">
-                    <div class="space-y-2">
-                        <label class="text-xs font-bold uppercase tracking-wider opacity-50 ml-1">SDK Version</label>
-                        <select id="sdk_pair" class="w-full bg-black/20 border border-white/10 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-brand-light/50 appearance-none cursor-pointer">
-                            {% for pair in sdk_pairs %}
-                            <option value="{{ pair.id }}" {% if pair.id == 4 %}selected{% endif %}>{{ pair.label }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-2">
-                            <label class="text-xs font-bold uppercase tracking-wider opacity-50 ml-1">PAID (Hex)</label>
-                            <input type="text" id="paid" value="0x3100000000000002" class="w-full bg-black/20 border border-white/10 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-brand-light/50 font-mono text-center">
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-xs font-bold uppercase tracking-wider opacity-50 ml-1">PType</label>
-                            <select id="ptype" class="w-full bg-black/20 border border-white/10 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-brand-light/50 appearance-none">
-                                <option value="fake">Fake</option>
-                                <option value="npdrm_exec">NPDRM Exec</option>
-                                <option value="system_exec">System Exec</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <label class="flex items-center gap-3 p-3 rounded-xl border border-white/5 bg-white/5 cursor-pointer hover:bg-white/10 transition-colors">
-                            <input type="checkbox" id="backup" checked class="w-4 h-4 rounded border-gray-600 text-brand-blue focus:ring-offset-0 bg-transparent">
-                            <span class="text-sm font-medium">Create Backups</span>
-                        </label>
-                        <label class="flex items-center gap-3 p-3 rounded-xl border border-white/5 bg-white/5 cursor-pointer hover:bg-white/10 transition-colors">
-                            <input type="checkbox" id="use_fakelib" checked class="w-4 h-4 rounded border-gray-600 text-brand-blue focus:ring-offset-0 bg-transparent">
-                            <span class="text-sm font-medium">Use Fakelib</span>
-                        </label>
-                    </div>
-                </div>
-            </div>
+    <!-- Firmware -->
+    <section class="ps5-card p-4">
+        <p class="text-xs font-medium text-white/40 uppercase tracking-wider mb-3">Firmware</p>
+        <div class="ps5-pill">
+            <label><input type="radio" name="firmware" value="6xx" class="sr-only" checked><span>6.xx</span></label>
+            <label><input type="radio" name="firmware" value="7xx" class="sr-only"><span>7.xx</span></label>
         </div>
+    </section>
 
-        <div class="bg-black/30 border-t border-white/5 p-4 flex items-center justify-between gap-4">
-            <div class="flex items-center gap-3 overflow-hidden">
-                <div id="status-icon" class="w-2 h-2 rounded-full bg-gray-500 shrink-0"></div>
-                <div id="status-text" class="text-sm font-mono opacity-60 truncate">Ready</div>
-            </div>
-            
-            <div class="flex items-center gap-2 shrink-0">
-                <button onclick="toggleConsole()" class="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors" title="View Logs">
-                    <i class="fa-solid fa-terminal"></i>
-                </button>
-                <button id="run-btn" onclick="runProcess()" class="px-6 py-2 bg-brand-blue hover:bg-brand-light text-white rounded-lg font-bold shadow-lg shadow-blue-500/20 transition-all active:scale-95 text-sm flex items-center gap-2">
-                    <i class="fa-solid fa-play"></i>
-                    <span>Run Process</span>
-                </button>
-            </div>
-        </div>
-
-        <div id="console-drawer" class="bg-black border-t border-white/10 h-0 transition-[height] duration-300 overflow-hidden flex flex-col">
-            <div class="flex-1 p-4 font-mono text-xs text-white overflow-auto custom-scroll whitespace-pre-wrap" id="terminal-content"></div>
-        </div>
+    <!-- FTP hint (compact) -->
+    <div class="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white/5 border border-white/5 text-sm text-white/70">
+        <i class="fa-solid fa-wifi text-ps5-blue text-lg"></i>
+        <p>Send <code class="px-1.5 py-0.5 rounded bg-white/10 text-xs font-mono">ftpsrv-ps5.elf</code> from the <a href="{{ url_for('home') }}" class="text-ps5-blue hover:underline">main page</a> first, then refresh games.</p>
     </div>
+
+    <!-- Games -->
+    <section class="ps5-card p-4">
+        <div class="flex items-center justify-between mb-4">
+            <p class="text-xs font-medium text-white/40 uppercase tracking-wider">Games</p>
+            <div class="flex gap-2">
+                <button type="button" onclick="testFTPConnection()" class="ps5-btn-ghost px-3 py-1.5 text-xs font-medium flex items-center gap-1.5" title="Test FTP">
+                    <i class="fa-solid fa-network-wired"></i> Test
+                </button>
+                <button type="button" onclick="refreshGames()" class="ps5-btn-primary px-3 py-1.5 text-xs flex items-center gap-1.5">
+                    <i class="fa-solid fa-arrows-rotate"></i> Refresh
+                </button>
+            </div>
+        </div>
+        <div id="games-list" class="space-y-2 max-h-[420px] overflow-y-auto ps5-scroll">
+            <div class="flex flex-col items-center justify-center py-16 text-white/40">
+                <i class="fa-solid fa-gamepad text-4xl mb-3 opacity-50"></i>
+                <p class="text-sm">Tap Refresh to scan for games</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Library (shown when game selected) -->
+    <section id="library-section" class="ps5-card p-4 hidden">
+        <p class="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">Library processing</p>
+        <p class="text-sm text-white/80 mb-3">Game: <span id="selected-game-name" class="font-semibold text-ps5-blue"></span></p>
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-xs text-white/50">Libraries to patch</span>
+            <div class="flex gap-1.5">
+                <button type="button" onclick="toggleAllLibraries(true)" class="text-xs text-white/60 hover:text-ps5-blue transition-colors">All</button>
+                <span class="text-white/30">|</span>
+                <button type="button" onclick="toggleAllLibraries(false)" class="text-xs text-white/60 hover:text-ps5-blue transition-colors">None</button>
+            </div>
+        </div>
+        <div id="libraries-list" class="space-y-1.5 mb-4"></div>
+        <button id="btn-process-libraries" type="button" onclick="processLibraries()" class="ps5-btn-primary w-full py-3 px-4 text-sm flex items-center justify-center gap-2">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            Process & upload libraries
+        </button>
+        <div id="processing-status" class="mt-4 space-y-2 hidden"></div>
+    </section>
+
 </main>
+
+<!-- Safelist for Tailwind: classes used in JS-injected game cards and status -->
+<div class="hidden"><div class="ps5-card text-ps5-blue bg-ps5-blue/20 text-white/45 group-hover:text-ps5-blue border-emerald-500/20 bg-emerald-500/10 border-red-500/20 bg-red-500/10 text-emerald-400 text-red-400"></div></div>
+
+<footer class="w-full border-t border-white/5 py-3 mt-auto">
+    <div class="max-w-4xl mx-auto px-4 flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest text-white/40">
+        <i class="fa-solid fa-code-branch"></i>
+        <span>BackPork</span>
+    </div>
+</footer>
 </body>
 </html>

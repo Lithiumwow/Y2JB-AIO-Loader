@@ -55,6 +55,22 @@ document.addEventListener('DOMContentLoaded', () => {
             url: "https://github.com/ps5-payload-dev/websrv",
             authorUrl: "https://github.com/john-tornblom",
             avatar: "https://avatars.githubusercontent.com/u/547534?v=4"
+        },
+        {
+            author: "earthonion",
+            project: "np-fake-signin",
+            role: "Account Activator (PSN fake sign-in)",
+            url: "https://github.com/earthonion/np-fake-signin",
+            authorUrl: "https://github.com/earthonion",
+            avatar: "https://avatars.githubusercontent.com/u/3332298?v=4"
+        },
+        {
+            author: "ps5-payload-dev",
+            project: "offact",
+            role: "Offline account activation (prerequisite for fake sign-in)",
+            url: "https://github.com/ps5-payload-dev/offact",
+            authorUrl: "https://github.com/ps5-payload-dev",
+            avatar: "https://avatars.githubusercontent.com/u/166182419?v=4"
         }
     ];
 

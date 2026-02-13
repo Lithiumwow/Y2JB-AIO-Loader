@@ -13,7 +13,7 @@ function toggleTheme() {
 
 function loadTheme() {
     const savedTheme = localStorage.getItem('theme');
-    const isDark = savedTheme === 'dark' || !savedTheme;
+    const isDark = savedTheme !== 'light';
 
     if (localStorage.getItem('animations') !== 'true') {
         disableTransitionsTemporarily();
@@ -28,8 +28,10 @@ function loadTheme() {
 }
 
 function updateThemeIcon(isDark) {
-    document.querySelectorAll('#theme-icon')
-        .forEach(el => (isDark ? el.className = 'fa-solid fa-moon' : el.className = 'fa-solid fa-sun text-yellow-500'));
+    const baseClass = 'theme-icon fa-solid text-sm';
+    document.querySelectorAll('.theme-icon').forEach(el => {
+        el.className = isDark ? `${baseClass} fa-moon` : `${baseClass} fa-sun text-yellow-500`;
+    });
 }
 
 function disableTransitionsTemporarily() {
@@ -46,3 +48,6 @@ function disableTransitionsTemporarily() {
     document.getElementById('disable-transitions')?.remove();
   }, 1000)
 }
+
+// Apply saved theme on every page that includes this script
+document.addEventListener('DOMContentLoaded', loadTheme);

@@ -1,0 +1,55 @@
+/* Shared light mode – include on all pages. Dark is default; this applies when html does NOT have .dark */
+html:not(.dark) body {
+    background-color: #f3f4f6 !important;
+    color: #111827 !important;
+}
+html:not(.dark) .surface {
+    background-color: #ffffff !important;
+    border-color: #e5e7eb !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+html:not(.dark) .input-field {
+    background-color: #f9fafb !important;
+    border-color: #d1d5db !important;
+    color: #111827 !important;
+}
+html:not(.dark) nav {
+    background: rgba(255,255,255,0.95) !important;
+    border-bottom-color: rgba(0,0,0,0.08) !important;
+}
+html:not(.dark) nav a,
+html:not(.dark) nav button {
+    color: #374151 !important;
+}
+html:not(.dark) nav a:hover,
+html:not(.dark) nav button:hover {
+    color: #111827 !important;
+}
+html:not(.dark) .ps5-bg {
+    background: radial-gradient(ellipse 120% 80% at 50% -20%, rgba(0,111,205,0.06), transparent 50%), #f3f4f6 !important;
+}
+html:not(.dark) .ps5-card {
+    background: #ffffff !important;
+    border-color: rgba(0,0,0,0.08) !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+html:not(.dark) .ps5-btn-ghost {
+    border-color: #e5e7eb !important;
+    color: #374151 !important;
+}
+html:not(.dark) .ps5-btn-ghost:hover {
+    border-color: #006FCD !important;
+    color: #006FCD !important;
+}
+html:not(.dark) .text-white\/40,
+html:not(.dark) .text-white\/50,
+html:not(.dark) .text-white\/60,
+html:not(.dark) .text-white\/70,
+html:not(.dark) .text-white\/80,
+html:not(.dark) .text-white\/90 {
+    color: rgba(17,24,39,0.85) !important;
+}
+html:not(.dark) #mobile-menu,
+html:not(.dark) [data-hidden].border-t {
+    border-top-color: rgba(0,0,0,0.08) !important;
+}

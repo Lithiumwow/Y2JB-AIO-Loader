@@ -121,3 +121,37 @@
         padding: 12px;
     }
 }
+
+/* Light mode */
+html:not(.dark) .dns-controls {
+    background: #f9fafb;
+    border-color: #e5e7eb;
+}
+html:not(.dark) .dns-controls h3 {
+    color: #111827;
+}
+html:not(.dark) .input-group input {
+    background: #ffffff;
+    border-color: #d1d5db;
+    color: #111827;
+}
+html:not(.dark) .hint {
+    color: #6b7280;
+}
+html:not(.dark) .rule-item {
+    background: #ffffff;
+    border-left-color: #0070f3;
+    border: 1px solid #e5e7eb;
+    border-left-width: 4px;
+    border-left-color: #0070f3;
+}
+html:not(.dark) .rule-name {
+    color: #111827;
+}
+html:not(.dark) .rule-detail {
+    color: #6b7280;
+}
+html:not(.dark) .no-data {
+    background: #f3f4f6;
+    color: #6b7280;
+}

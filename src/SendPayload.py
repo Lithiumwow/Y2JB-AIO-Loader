@@ -2,7 +2,10 @@ import socket
 import sys
 import time
 
-def send_payload(file_path, host, port=50000, tries=5):
+def send_payload(file_path, host, port=50000, tries=5, timeout=15):
+    """Send payload file to host:port. Returns (success, error_message). error_message is None on success."""
+    last_error = None
+    host = (host or "").strip()
     attempt = 0
     while attempt < tries:
         try:
@@ -10,7 +13,7 @@ def send_payload(file_path, host, port=50000, tries=5):
                 data = f.read()
             
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(10)
+            sock.settimeout(timeout)
             
             print(f"Connecting to {host}:{port}...")
             sock.connect((host, port))
@@ -23,19 +26,24 @@ def send_payload(file_path, host, port=50000, tries=5):
             time.sleep(0.5)
             
             print('done')
-            return True
+            return (True, None)
             
         except ConnectionRefusedError:
-            print(f"Connection refused: {host}:{port}")
+            last_error = f"Connection refused ({host}:{port}). Is the remote loader running?"
+            print(last_error)
         except socket.gaierror:
-            print(f"Host doesn't exist: {host}")
+            last_error = f"Host not found: {host}"
+            print(last_error)
         except socket.timeout:
-            print(f"Connection timeout: {host}:{port}")
+            last_error = f"Connection timeout ({host}:{port}). Check network/firewall."
+            print(last_error)
         except FileNotFoundError:
-            print(f"File not found: {file_path}")
-            return False
+            last_error = f"File not found: {file_path}"
+            print(last_error)
+            return (False, last_error)
         except Exception as e:
-            print(f"Unexpected error: {str(e)}")
+            last_error = f"Error: {str(e)}"
+            print(last_error)
         
         attempt += 1
         if attempt < tries:
@@ -43,7 +51,7 @@ def send_payload(file_path, host, port=50000, tries=5):
             time.sleep(1)
     
     print(f"Failed after {tries} attempts")
-    return False
+    return (False, last_error or "Failed after retries")
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
@@ -69,9 +77,10 @@ Note: Make sure the target server is listening on the specified port
 
     print(f"Starting transmission to {host}:{port}")
 
-    if send_payload(file_path, host, port):
+    ok, err = send_payload(file_path, host, port)
+    if ok:
         print("Transmission completed successfully")
         sys.exit(0)
     else:
-        print("Transmission failed")
+        print("Transmission failed:", err or "")
         sys.exit(1)

@@ -100,7 +100,7 @@ pip install --upgrade pip -q
 
 # Install required dependencies
 echo "Installing dependencies..."
-pip install -q flask flask-cors werkzeug requests
+pip install -q -r requirements.txt
 
 # Verify critical dependencies
 echo "Verifying critical dependencies..."

@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>(function(){var t=localStorage.getItem('theme');if(t==='light')document.documentElement.classList.remove('dark');else document.documentElement.classList.add('dark');})();</script>
     <title>Y2JB - DNS Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    fontFamily: { sans: ['Noto Sans', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'] },
                     colors: {
                         oled: { base: '#000000', surface: '#121212', border: '#2a2a2a' },
                         brand: { blue: '#00439c', light: '#0070d1' }
@@ -22,6 +23,7 @@
         }
     </script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style/index.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style/light-mode.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style/compact.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style/toast.css') }}">
     <script src="{{ url_for('static', filename='color_mode.js') }}" defer></script>

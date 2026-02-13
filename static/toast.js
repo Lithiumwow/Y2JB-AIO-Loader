@@ -39,3 +39,8 @@ const Toast = {
         }, 4000);
     }
 };
+
+// Global wrapper function for convenience
+function showToast(message, type = 'info') {
+    Toast.show(message, type);
+}

@@ -1,10 +1,20 @@
 import fnmatch
 import json
 import logging
+import sys
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, Response
 from flask_cors import CORS
 from werkzeug.utils import secure_filename as werkzeug_secure_filename
 import os
+
+# Configure logging to ensure output goes to console
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    stream=sys.stdout,
+    force=True
+)
+logger = logging.getLogger(__name__)
 from src.SendPayload import send_payload
 from src.delete_payload import handle_delete_payload
 from src.download_payload import handle_url_download
@@ -20,14 +30,20 @@ from flask import send_file
 import uuid
 from src.dns_server import DNSServer
 from src.backpork.core import BackporkEngine
+from src.backpork_manager import (
+    list_installed_games, create_fakelib_folder, fetch_system_library,
+    process_library_for_game, REQUIRED_LIBS
+)
 from src.features import setup_logging, run_startup_tasks, get_logs
 from src.system_manager import get_system_stats, power_control
+import subprocess
 
 app = Flask(__name__)
 app.secret_key = 'Nazky'
 CORS(app)
 
 dns_service = None
+_download0_auto_check_done = False
 
 PAYLOAD_DIR = "payloads"
 ELF_DIR = "payloads/elf"
@@ -150,11 +166,15 @@ def check_ajb():
 
                 if ip_address:
                     # duris atidarytos = pisam payloada
-                    current_port_state = is_port_open(ip_address, 50000)
+                    try:
+                        _loader_port = int(get_config().get("loader_port", "50000"))
+                    except (ValueError, TypeError):
+                        _loader_port = 50000
+                    current_port_state = is_port_open(ip_address, _loader_port)
                     
                     #bbd aiskint. pashol nxj debilai
                     if current_port_state and not last_port_state:
-                        print(f"[AJB] Target {ip_address}:50000 detected OPEN. Initiating sequence...")
+                        print(f"[AJB] Target {ip_address}:{_loader_port} detected OPEN. Initiating sequence...")
                         
                         try:
                             response = requests.post(url, json={
@@ -172,7 +192,7 @@ def check_ajb():
                     # duris uzsidaro (ps issijungia or tt) , resetinam state
                     # kai ps injugs turetu veikt
                     elif not current_port_state and last_port_state:
-                         print(f"[AJB] Target {ip_address}:50000 closed. Resetting automation state.")
+                         print(f"[AJB] Target {ip_address}:{_loader_port} closed. Resetting automation state.")
                     
                     # surasau paskutine duru state, kad zinot kada keistis
                     last_port_state = current_port_state
@@ -187,8 +207,23 @@ def check_ajb():
         finally:
             time.sleep(5)
 
+def _run_download0_auto_update():
+    global _download0_auto_check_done
+    if _download0_auto_check_done:
+        return
+    _download0_auto_check_done = True
+    try:
+        print("[REPO] Auto-checking download0.dat for update (first load)...")
+        update_payloads(targets=['download0.dat'])
+    except Exception as e:
+        print(f"[REPO] Auto-update download0.dat failed: {e}")
+
+
 @app.route("/")
 def home():
+    global _download0_auto_check_done
+    if not _download0_auto_check_done:
+        threading.Thread(target=_run_download0_auto_update, daemon=True).start()
     return render_template('index.html')
 
 @app.route('/api/payload_config', methods=['GET'])
@@ -377,18 +412,23 @@ def download_payload_url():
 def sending_payload():
     try:
         data = request.get_json()
-        host = data.get("IP")
+        host = (data.get("IP") or "").strip()
         payload = data.get("payload")
 
         if not host:
             return jsonify({"error": "Missing IP parameter"}), 400
+        global_config = get_config()
+        try:
+            loader_port = int(global_config.get("loader_port", "50000"))
+        except (ValueError, TypeError):
+            loader_port = 50000
         if not payload:
             print("--- Starting Auto-Jailbreak Sequence ---")
             
             config = get_payload_config()
 
-            print(f"[SEND] lapse.js -> {host}:50000")
-            result = send_payload(file_path='payloads/js/lapse.js', host=host, port=50000)
+            print(f"[SEND] lapse.js -> {host}:{loader_port}")
+            result, send_err = send_payload(file_path='payloads/js/lapse.js', host=host, port=loader_port)
             time.sleep(10)
             
             if result:
@@ -402,9 +442,10 @@ def sending_payload():
                         kstuff_path = 'payloads/kstuff.elf'
 
                     print(f"[SEND] kstuff.elf -> {host}:9021")
-                    kstuff_result = send_payload(file_path=kstuff_path, host=host, port=9021)
+                    kstuff_result, kstuff_err = send_payload(file_path=kstuff_path, host=host, port=9021)
                     time.sleep(10)
                 else:
+                    kstuff_result, kstuff_err = True, None
                     print("[SKIP] kstuff.elf (Disabled in Settings)")
                 
                 if kstuff_result:
@@ -444,7 +485,7 @@ def sending_payload():
 
                         if (fnmatch.fnmatch(filename, '*.bin') or fnmatch.fnmatch(filename, '*.elf')) and 'kstuff.elf' not in filename:
                             print(f"[SEND] {filename} -> {host}:9021")
-                            result = send_payload(file_path=os.path.join(PAYLOAD_DIR,filename), host=host, port=9021)
+                            result, send_err = send_payload(file_path=os.path.join(PAYLOAD_DIR,filename), host=host, port=9021)
                             
                             if delay_flags.get(filename, False):
                                 print(f"[WAIT] Sleeping {delay_time}s for {filename}...")
@@ -454,26 +495,26 @@ def sending_payload():
                             
                             if not result:
                                 print(f"[FAIL] Could not send {filename}")
-                                return jsonify({"error": f"Failed to send {filename}"}), 500
+                                return jsonify({"error": send_err or f"Failed to send {filename}"}), 500
                     
                     print("--- Auto-Jailbreak Sequence Complete ---")
                     return jsonify({"success": True, "message": "All payloads sent successfully"})
                 else:
-                    return jsonify({"error": "Failed to send kstuff.elf"}), 500
+                    return jsonify({"error": kstuff_err or "Failed to send kstuff.elf"}), 500
             else:
-                return jsonify({"error": "Failed to send lapse.js"}), 500
+                return jsonify({"error": send_err or "Failed to send lapse.js"}), 500
         else:
             port = 9021
             if payload.lower().endswith('.js'):
-                port = 50000
+                port = loader_port
             
             print(f"[MANUAL] Sending {payload} -> {host}:{port}")
-            result = send_payload(file_path=payload, host=host, port=port)
+            result, send_err = send_payload(file_path=payload, host=host, port=port)
             
             if result:
                 return jsonify({"success": True, "message": "Custom payload sent"})
             else:
-                return jsonify({"error": "Failed to send custom payload"}), 500
+                return jsonify({"error": send_err or "Failed to send custom payload"}), 500
 
     except Exception as e:
         print(f"[ERROR] {str(e)}")
@@ -613,7 +654,7 @@ def handle_settings():
             current_config = get_config()
             
             valid_keys = [
-                'ip', 'ajb', 'ftp_port', 'global_delay', 
+                'ip', 'ajb', 'ftp_port', 'loader_port', 'global_delay', 
                 'ui_animations', 'kstuff', 'debug_mode', 
                 'auto_update_repos', 'dns_auto_start', 'compact_mode'
             ]
@@ -627,6 +668,23 @@ def handle_settings():
             return jsonify({"success": True, "message": "Settings saved successfully"})
         except Exception as e:
             return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/check_loader')
+def check_loader():
+    """Test if the loader port is open on the PS5 (from this server's network)."""
+    try:
+        ip = (request.args.get('ip') or get_config().get('ip', '')).strip()
+        port_str = request.args.get('port') or get_config().get('loader_port', '50000')
+        try:
+            port = int(port_str)
+        except (ValueError, TypeError):
+            port = 50000
+        if not ip:
+            return jsonify({"success": False, "error": "No IP provided"}), 400
+        open_ = is_port_open(ip, port, timeout=3)
+        return jsonify({"success": True, "open": open_, "ip": ip, "port": port})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/network_info')
 def network_info():
@@ -775,23 +833,376 @@ def api_dns_delete():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# BackPork endpoints (our integration: FTP, patch-from-GitHub, fakelib)
 @app.route('/backpork')
 def backpork_page():
-    pairs = [{"id": i, "label": f"Pair {i}"} for i in range(1, 11)] 
-    return render_template('backpork.html', sdk_pairs=pairs)
+    return render_template('backpork.html')
 
-@app.route("/api/backpork/settings", methods=['GET', 'POST'])
-def handle_backpork_settings():
-    if request.method == 'GET':
-        return jsonify(BackporkEngine.load_config())
-    if request.method == 'POST':
-        BackporkEngine.save_config(request.json)
-        return jsonify({"success": True})
+@app.route('/account-activator')
+def account_activator_page():
+    return render_template('account_activator.html')
 
-@app.route("/api/backpork/run", methods=['POST'])
-def run_backpork_process():
-    data = request.json
-    return Response(BackporkEngine.run_process(data), mimetype='text/event-stream')
+@app.route('/api/backpork/test_ftp', methods=['POST'])
+def api_backpork_test_ftp():
+    """Test FTP connection to PS5"""
+    try:
+        config = get_config()
+        ip = config.get("ip")
+        port = config.get("ftp_port", "1337")
+        
+        if not ip:
+            return jsonify({"success": False, "error": "IP Address not set"}), 400
+        
+        # Try to connect and list root directory
+        from src.backpork_manager import get_ftp_connection
+        ftp = None
+        try:
+            ftp = get_ftp_connection(ip, port)
+            # Try to list root directory
+            ftp.retrlines('LIST', lambda x: None)
+            ftp.quit()
+            return jsonify({"success": True, "message": f"FTP connection successful to {ip}:{port}"})
+        except Exception as e:
+            error_msg = str(e)
+            if "Connection refused" in error_msg or "10061" in error_msg:
+                return jsonify({
+                    "success": False, 
+                    "error": f"FTP server not running. Make sure:\n1. Send ftpsrv-ps5.elf payload from the main page\n2. Wait a few seconds after sending\n3. Check that port {port} is correct"
+                }), 500
+            else:
+                return jsonify({"success": False, "error": error_msg}), 500
+        finally:
+            if ftp:
+                try:
+                    ftp.quit()
+                except:
+                    pass
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/backpork/list_games', methods=['POST'])
+def api_backpork_list_games():
+    try:
+        config = get_config()
+        ip = config.get("ip")
+        port = config.get("ftp_port", "1337")
+        
+        if not ip:
+            return jsonify({"success": False, "error": "IP Address not set"}), 400
+        
+        result = list_installed_games(ip, port)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/backpork/create_fakelib', methods=['POST'])
+def api_backpork_create_fakelib():
+    try:
+        config = get_config()
+        ip = config.get("ip")
+        port = config.get("ftp_port", "1337")
+        data = request.json
+        game_path = data.get('game_path')
+        title_id = data.get('title_id')  # Extract title_id from game object
+        
+        if not ip:
+            return jsonify({"success": False, "error": "IP Address not set"}), 400
+        if not game_path:
+            return jsonify({"success": False, "error": "Game path not provided"}), 400
+        
+        logger.info("=" * 60)
+        logger.info("/api/backpork/create_fakelib called")
+        logger.info(f"game_path={game_path}")
+        logger.info(f"title_id={title_id}")
+        logger.info(f"IP={ip}, Port={port}")
+        logger.info("=" * 60)
+        sys.stdout.flush()
+        sys.stderr.flush()
+        
+        result = create_fakelib_folder(ip, port, game_path, title_id)
+        
+        logger.info("=" * 60)
+        logger.info("/api/backpork/create_fakelib result")
+        logger.info(f"success={result.get('success')}")
+        logger.info(f"message={result.get('message')}")
+        logger.info(f"error={result.get('error')}")
+        logger.info(f"path={result.get('path')}")
+        logger.info("=" * 60)
+        sys.stdout.flush()
+        sys.stderr.flush()
+        
+        return jsonify(result)
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"[API] Exception in create_fakelib: {e}")
+        print(f"[API] Traceback: {error_trace}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/backpork/test_code', methods=['GET'])
+def api_backpork_test_code():
+    """Test endpoint to verify code is running"""
+    import src.backpork_manager
+    import inspect
+    source_file = inspect.getsourcefile(src.backpork_manager.create_fakelib_folder)
+    with open(source_file, 'r') as f:
+        lines = f.readlines()
+        # Check if line 258 has the new logging
+        if len(lines) > 257 and '[FAKELIB] ==========' in lines[257]:
+            return jsonify({"success": True, "message": "New code is loaded", "line_258": lines[257].strip()})
+        else:
+            return jsonify({"success": False, "message": "Old code might be running", "line_258": lines[257].strip() if len(lines) > 257 else "N/A"})
+
+@app.route('/api/backpork/discover_paths', methods=['POST'])
+def api_backpork_discover_paths():
+    """Discover where games are actually stored"""
+    try:
+        config = get_config()
+        ip = config.get("ip")
+        port = config.get("ftp_port", "1337")
+        
+        if not ip:
+            return jsonify({"success": False, "error": "IP Address not set"}), 400
+        
+        from src.backpork_manager import get_ftp_connection
+        import ftplib
+        
+        ftp = None
+        accessible_paths = []
+        game_directories = []
+        
+        try:
+            ftp = get_ftp_connection(ip, port)
+            
+            # List of potential base paths to check
+            potential_paths = [
+                "/data", "/data/games", "/data/homebrew", "/data/etaHEN", "/data/etaHEN/games",
+                "/mnt", "/mnt/ext0", "/mnt/ext0/games", "/mnt/ext0/homebrew", "/mnt/ext0/etaHEN",
+                "/user", "/user/app",
+            ]
+            
+            # Add USB paths
+            for usb_num in range(8):
+                potential_paths.extend([
+                    f"/mnt/usb{usb_num}",
+                    f"/mnt/usb{usb_num}/games",
+                    f"/mnt/usb{usb_num}/homebrew",
+                    f"/mnt/usb{usb_num}/etaHEN",
+                    f"/mnt/usb{usb_num}/etaHEN/games",
+                ])
+            
+            for path in potential_paths:
+                try:
+                    ftp.cwd(path)
+                    lines = []
+                    ftp.retrlines('LIST', lines.append)
+                    accessible_paths.append({
+                        "path": path,
+                        "item_count": len(lines),
+                        "items": [line.split()[-1] for line in lines[:10]]  # First 10 items
+                    })
+                    
+                    # Check if any items look like game directories (PPSA or CUSA)
+                    for line in lines:
+                        parts = line.split()
+                        if len(parts) >= 9:
+                            name = parts[-1]
+                            if (name.startswith('PPSA') or name.startswith('CUSA')) and parts[0].startswith('d'):
+                                game_directories.append({
+                                    "path": f"{path}/{name}",
+                                    "title_id": name
+                                })
+                except:
+                    pass
+            
+            return jsonify({
+                "success": True,
+                "accessible_paths": accessible_paths,
+                "game_directories": game_directories
+            })
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 500
+        finally:
+            if ftp:
+                try:
+                    ftp.quit()
+                except:
+                    pass
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/backpork/process_libraries', methods=['POST'])
+def api_backpork_process_libraries():
+    try:
+        config = get_config()
+        ip = config.get("ip")
+        port = config.get("ftp_port", "1337")
+        data = request.json
+        firmware = data.get('firmware')  # '6xx' or '7xx'
+        game_path = data.get('game_path')
+        selected_libs = data.get('libraries', list(REQUIRED_LIBS.keys()))  # List of library names to process
+        
+        if not ip:
+            return jsonify({"success": False, "error": "IP Address not set"}), 400
+        if not firmware:
+            return jsonify({"success": False, "error": "Firmware version not selected"}), 400
+        if not game_path:
+            return jsonify({"success": False, "error": "Game path not provided"}), 400
+        
+        results = []
+        print(f"\n[BACKPORK] ========== Starting library processing ==========")
+        print(f"[BACKPORK] IP: {ip}, Port: {port}")
+        print(f"[BACKPORK] Firmware: {firmware}, Game path: {game_path}")
+        print(f"[BACKPORK] Libraries to process: {selected_libs}")
+        print(f"[BACKPORK] ===================================================\n")
+        
+        for lib_name in selected_libs:
+            print(f"\n[BACKPORK] Processing library: {lib_name}")
+            print(f"[BACKPORK] ===================================================")
+            try:
+                result = process_library_for_game(ip, port, lib_name, firmware, game_path)
+                print(f"[BACKPORK] Result for {lib_name}: success={result.get('success')}, error={result.get('error')}")
+                results.append({
+                    "library": lib_name,
+                    "success": result.get("success", False),
+                    "message": result.get("message") or result.get("error", "Unknown error"),
+                    "steps": result.get("steps", [])
+                })
+                if result.get("success"):
+                    print(f"[BACKPORK] ✓ {lib_name} processed successfully")
+                else:
+                    error_msg = result.get('error', 'Unknown error')
+                    print(f"[BACKPORK] ✗ {lib_name} failed: {error_msg}")
+                    sys.stdout.flush()
+            except Exception as e:
+                import traceback
+                error_trace = traceback.format_exc()
+                print(f"[BACKPORK] ✗✗✗ EXCEPTION processing {lib_name}: {e}")
+                print(f"[BACKPORK] Full traceback:")
+                print(error_trace)
+                sys.stdout.flush()
+                sys.stderr.flush()
+                results.append({
+                    "library": lib_name,
+                    "success": False,
+                    "message": f"Exception: {str(e)}",
+                    "steps": []
+                })
+        
+        all_success = all(r["success"] for r in results)
+        return jsonify({
+            "success": all_success,
+            "results": results
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/update', methods=['POST'])
+def api_update():
+    """Update Y2JB-WebUI from git repository"""
+    try:
+        import subprocess
+        
+        # Get the directory where server.py is located (Y2JB-WebUI)
+        webui_dir = os.path.dirname(os.path.abspath(__file__))
+        
+        # Check if it's a git repository
+        git_dir = os.path.join(webui_dir, '.git')
+        if not os.path.exists(git_dir):
+            return jsonify({
+                "success": False,
+                "error": "Not a git repository. Cannot update."
+            }), 400
+        
+        # Change to the webui directory
+        original_cwd = os.getcwd()
+        os.chdir(webui_dir)
+        
+        try:
+            # Fetch latest changes
+            fetch_result = subprocess.run(
+                ['git', 'fetch', 'origin'],
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            
+            if fetch_result.returncode != 0:
+                return jsonify({
+                    "success": False,
+                    "error": f"Git fetch failed: {fetch_result.stderr}"
+                }), 500
+            
+            # Check current branch
+            branch_result = subprocess.run(
+                ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            current_branch = branch_result.stdout.strip() if branch_result.returncode == 0 else 'main'
+            
+            # Get status before pull
+            status_before = subprocess.run(
+                ['git', 'rev-parse', 'HEAD'],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            commit_before = status_before.stdout.strip() if status_before.returncode == 0 else 'unknown'
+            
+            # Pull latest changes
+            pull_result = subprocess.run(
+                ['git', 'pull', 'origin', current_branch],
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+            
+            # Get status after pull
+            status_after = subprocess.run(
+                ['git', 'rev-parse', 'HEAD'],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            commit_after = status_after.stdout.strip() if status_after.returncode == 0 else 'unknown'
+            
+            if pull_result.returncode != 0:
+                return jsonify({
+                    "success": False,
+                    "error": f"Git pull failed: {pull_result.stderr}",
+                    "output": pull_result.stdout
+                }), 500
+            
+            # Check if there were changes
+            updated = commit_before != commit_after
+            
+            return jsonify({
+                "success": True,
+                "updated": updated,
+                "commit_before": commit_before[:8] if commit_before != 'unknown' else None,
+                "commit_after": commit_after[:8] if commit_after != 'unknown' else None,
+                "branch": current_branch,
+                "output": pull_result.stdout,
+                "message": "Updated successfully" if updated else "Already up to date"
+            })
+            
+        finally:
+            os.chdir(original_cwd)
+            
+    except subprocess.TimeoutExpired:
+        return jsonify({
+            "success": False,
+            "error": "Update operation timed out. Please try again."
+        }), 500
+    except Exception as e:
+        import traceback
+        return jsonify({
+            "success": False,
+            "error": f"Update failed: {str(e)}",
+            "traceback": traceback.format_exc()
+        }), 500
 
 @app.route('/logs')
 def logs_page():

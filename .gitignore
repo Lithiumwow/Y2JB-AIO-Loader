@@ -6,3 +6,7 @@ static/config/payload_order.json
 static/config/payload_delay_flags.json
 static/config/dns_rules.json
 /src/backpork/__pycache__
+venv/
+server.log
+server.pid
+cache/

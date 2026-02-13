@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>(function(){var t=localStorage.getItem('theme');if(t==='light')document.documentElement.classList.remove('dark');else document.documentElement.classList.add('dark');})();</script>
+    <link rel="manifest" href="{{ url_for('static', filename='json/manifest.json') }}">
+    <meta name="theme-color" content="#0a0a0f">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/icon.png') }}">
+    <title>Account Activator - Y2JB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Noto Sans', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'] },
+                    colors: { ps5: { black: '#0a0a0f', card: '#1a1a22', blue: '#006FCD' } }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style/index.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style/light-mode.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style/toast.css') }}">
+    <script src="{{ url_for('static', filename='color_mode.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='toast.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='account_activator.js') }}" defer></script>
+    <style>
+        .ps5-bg { background: radial-gradient(ellipse 120% 80% at 50% -20%, rgba(0,111,205,0.08), transparent 50%), #0a0a0f; }
+        .ps5-card { background: #1a1a22; border: 1px solid rgba(255,255,255,0.06); border-radius: 1rem; }
+        .ps5-btn-primary { background: #006FCD; color: white; border-radius: 0.75rem; font-weight: 600; }
+        .ps5-btn-primary:hover:not(:disabled) { background: #2180e0; transform: translateY(-1px); }
+        .ps5-btn-ghost { background: transparent; border: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.9); border-radius: 0.5rem; }
+        .ps5-btn-ghost:hover { border-color: rgba(0,111,205,0.5); color: #2180e0; }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col bg-ps5-black text-white transition-colors duration-300 ps5-bg">
+
+<nav class="w-full border-b border-white/5 bg-ps5-black/80 backdrop-blur-xl sticky top-0 z-10">
+    <div class="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
+        <a href="{{ url_for('home') }}" class="flex items-center gap-2.5 text-white/90 hover:text-white transition-colors">
+            <i class="fa-brands fa-playstation text-2xl text-ps5-blue"></i>
+            <span class="font-semibold text-lg tracking-tight">Y2JB</span>
+            <span class="text-white/40 text-sm font-medium">/ Account Activator</span>
+        </a>
+        <div class="flex items-center gap-2">
+            <a href="{{ url_for('home') }}" class="ps5-btn-ghost px-3 py-1.5 text-sm flex items-center gap-2">
+                <i class="fa-solid fa-home text-xs"></i> Home
+            </a>
+            <button type="button" onclick="typeof toggleTheme==='function'&&toggleTheme()" class="w-9 h-9 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/5 transition-all" aria-label="Toggle theme">
+                <i id="theme-icon" class="theme-icon fa-solid fa-moon text-sm"></i>
+            </button>
+        </div>
+    </div>
+</nav>
+
+<main class="flex-1 w-full max-w-2xl mx-auto px-4 py-8 space-y-6">
+
+    <section class="ps5-card p-5">
+        <h2 class="text-sm font-semibold text-white/90 mb-1">What this does</h2>
+        <p class="text-sm text-white/70">Sets PSN state to &quot;signed in&quot; on your PS5 so you can use features that require a signed-in account. You must <strong>offline-activate</strong> the account first.</p>
+    </section>
+
+    <section class="ps5-card p-5">
+        <p class="text-xs font-medium text-white/40 uppercase tracking-wider mb-3">Prerequisite: Offline activation</p>
+        <p class="text-sm text-white/70 mb-3">The account must have a non-zero account ID. Use <strong>OffAct</strong> (or similar) on the PS5:</p>
+        <ul class="text-sm text-white/60 space-y-1.5 mb-4 list-disc list-inside">
+            <li>Download OffAct and extract to <code class="bg-white/10 px-1.5 py-0.5 rounded text-xs font-mono">/data/homebrew/OffAct</code> on the PS5.</li>
+            <li>Run it via <strong>websrv</strong> (same way you run other homebrew).</li>
+            <li>Complete the activation so the account is offline-activated.</li>
+        </ul>
+        <a href="https://github.com/ps5-payload-dev/offact" target="_blank" rel="noopener" class="ps5-btn-ghost inline-flex items-center gap-2 px-3 py-2 text-sm">
+            OffAct (GitHub) <i class="fa-solid fa-external-link text-[10px]"></i>
+        </a>
+    </section>
+
+    <section class="ps5-card p-5">
+        <p class="text-xs font-medium text-white/40 uppercase tracking-wider mb-3">Steps (in order)</p>
+        <ol class="text-sm text-white/80 space-y-3 list-decimal list-inside">
+            <li><strong>Offline-activate</strong> the account with OffAct (see above).</li>
+            <li>On the <a href="{{ url_for('home') }}" class="text-ps5-blue hover:underline">Home</a> page, run <strong>Jailbreak</strong> and wait until Y2JB is done.</li>
+            <li>Enter your PS5 IP below (or set it on Home) and click <strong>Send Account Activator</strong>.</li>
+            <li><strong>Reboot</strong> the console for the fake sign-in to apply.</li>
+        </ol>
+    </section>
+
+    <section class="ps5-card p-5">
+        <p class="text-xs font-medium text-white/40 uppercase tracking-wider mb-3">PS5 connection</p>
+        <input type="text" id="activator-IP" placeholder="PS5 IP Address"
+               class="input-field block w-full px-4 py-2.5 border rounded-xl text-sm font-mono bg-white/5 border-white/10 focus:ring-2 focus:ring-ps5-blue outline-none mb-4"
+               onchange="saveActivatorIP()">
+        <button type="button" id="btn-send-activator" onclick="sendAccountActivator()" class="ps5-btn-primary px-5 py-3 text-sm flex items-center gap-2">
+            <i class="fa-solid fa-user-check"></i>
+            Send Account Activator
+        </button>
+    </section>
+
+    <section class="ps5-card p-5">
+        <p class="text-xs font-medium text-white/40 uppercase tracking-wider mb-3">Credits &amp; payload</p>
+        <p class="text-sm text-white/60 mb-3">Uses <strong>np-fake-signin</strong> by earthonion. Get the payload from <a href="{{ url_for('repo_manager_ui') }}" class="text-ps5-blue hover:underline">Repos</a> (np-fake-signin.elf) if you don’t have it yet.</p>
+        <div class="flex flex-wrap gap-2">
+            <a href="https://github.com/earthonion/np-fake-signin" target="_blank" rel="noopener" class="ps5-btn-ghost px-3 py-2 text-xs inline-flex items-center gap-1.5">
+                np-fake-signin <i class="fa-solid fa-external-link text-[10px]"></i>
+            </a>
+            <a href="https://github.com/ps5-payload-dev/offact" target="_blank" rel="noopener" class="ps5-btn-ghost px-3 py-2 text-xs inline-flex items-center gap-1.5">
+                OffAct <i class="fa-solid fa-external-link text-[10px]"></i>
+            </a>
+        </div>
+    </section>
+
+</main>
+</body>
+</html>

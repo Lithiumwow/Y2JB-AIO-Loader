@@ -1,6 +1,9 @@
 html.dark body { background-color: #000000; color: #e5e5e5; }
 html.dark .surface { background-color: #121212; border-color: #2a2a2a; }
 html.dark .input-field { background-color: #000000; border-color: #333; color: white; }
+html:not(.dark) body { background-color: #f3f4f6; color: #111827; }
+html:not(.dark) .surface { background-color: #ffffff; border-color: #e5e7eb; }
+html:not(.dark) .input-field { background-color: #f9fafb; border-color: #d1d5db; color: #111827; }
 .custom-scroll::-webkit-scrollbar { height: 6px; width: 6px; }
 .custom-scroll::-webkit-scrollbar-track { background: transparent; }
 .custom-scroll::-webkit-scrollbar-thumb { background-color: #333; border-radius: 3px; }
@@ -13,12 +16,12 @@ html.dark .input-field { background-color: #000000; border-color: #333; color: w
     tbody tr {
         display: flex;
         flex-direction: column;
-        background-color: rgba(255, 255, 255, 0.03);
-        border: 1px solid #333;
         border-radius: 0.75rem;
         margin-bottom: 1rem;
         padding: 1rem;
     }
+    html.dark tbody tr { background-color: rgba(255, 255, 255, 0.03); border: 1px solid #333; }
+    html:not(.dark) tbody tr { background-color: #ffffff; border: 1px solid #e5e7eb; }
 
     tbody td {
         display: flex;
