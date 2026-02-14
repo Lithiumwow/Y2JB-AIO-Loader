@@ -42,6 +42,14 @@ app = Flask(__name__)
 app.secret_key = 'Nazky'
 CORS(app)
 
+
+@app.after_request
+def add_static_cache(response):
+    """Cache static assets so repeat visits load faster."""
+    if request.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "public, max-age=3600"
+    return response
+
 dns_service = None
 _download0_auto_check_done = False
 
@@ -1343,4 +1351,4 @@ if __name__ == "__main__":
         else:
             print("[STARTUP] DNS Server disabled by settings")
 
-    app.run(host="0.0.0.0", port=8000, debug=debug_mode)
+    app.run(host="0.0.0.0", port=8000, debug=debug_mode, threaded=True, use_reloader=debug_mode)
